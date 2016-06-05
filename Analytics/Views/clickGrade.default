@@ -1,0 +1,22 @@
+
+
+<script type="text/javascript" src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<div id="myDiv"></div>
+
+<script>
+    var data = [
+        <TMPL_LOOP NAME="grades">
+        {
+            y : [ <TMPL_VAR NAME="clicks"> ],
+            boxpoints: 'all',
+            jitter: 0.3,
+            pointpos: -1.8,
+            type: 'box',
+            name: '<TMPL_VAR NAME="grade">'
+        },
+        </TMPL_LOOP>
+    ];
+
+    Plotly.newPlot('myDiv', data );
+</script>
