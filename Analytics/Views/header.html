@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><TMPL_VAR NAME="PAGE_TITLE"></title>
+    <meta name="viewport" content="width=device-width" />   
+
+</head>
+<body>
+
+<link rel="stylesheet" type="text/css" href="/qilters/qilters.css" />
+
+<nav id="menu-wrap">    
+    <ul id="menu">
+    <TMPL_LOOP NAME="COURSES">
+        <li>
+            <TMPL_IF NAME="LINK">
+                <a href="<TMPL_VAR NAME="LINK">"> <TMPL_VAR NAME="LABEL"> </a>
+            <TMPL_ELSE><span><TMPL_VAR NAME="LABEL"></span></TMPL_IF>
+            <ul>
+            <TMPL_LOOP NAME="OFFERINGS">
+                <li>
+                    <!-- <span><TMPL_VAR NAME="LABEL"></span>-->
+                    <a href=""><TMPL_VAR NAME="LABEL"></a>
+                    <ul>
+                    <TMPL_LOOP NAME="ANALYTICS">
+                        <li>
+                            <a href="<TMPL_VAR NAME="LINK">"><TMPL_VAR NAME="LABEL"> </a>
+                        </li>
+                    </TMPL_LOOP> 
+                    </ul>
+                </li>
+            </TMPL_LOOP>
+            </ul>
+        </li>
+    </TMPL_LOOP> <!-- *** COURSES -->
+    </ul>
+</nav>
+
+<!-- <nav id="subMenu"> 
+  <ul id="courseMenu"> 
+  <TMPL_LOOP NAME="SUBSETS">
+    <li>
+        <a href="<TMPL_VAR NAME="LINK">"><TMPL_VAR NAME="LABEL"></a>
+    </li>
+  </TMPL_LOOP>
+  </ul>
+</nav> -->
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script type="text/javascript">
+    $(function() {
+        if ($.browser.msie && $.browser.version.substr(0,1)<7)
+        {
+        $('li').has('ul').mouseover(function(){
+            $(this).children('ul').css('visibility','visible');
+            }).mouseout(function(){
+            $(this).children('ul').css('visibility','hidden');
+            })
+        }
+
+        /* Mobile */
+        $('#menu-wrap').prepend('<div id="menu-trigger">Menu</div>');       
+        $("#menu-trigger").on("click", function(){
+            $("#menu").slideToggle();
+        });
+
+        // iPad
+        var isiPad = navigator.userAgent.match(/iPad/i) != null;
+        if (isiPad) $('#menu ul').addClass('no-transition');      
+    });          
+</script>
