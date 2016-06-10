@@ -26,6 +26,7 @@ my $COURSE_DETAILS_DEFAULTS = {
     CACHE => { namespace => "QILT", default_expires_in => "7 days" }
 };
     
+
 my $CLICK_NEW_DEFAULTS = {
     TABLE => "moodle.mdl_logstore_standard_log",
     FIELDS => "courseid,count(*) as clicks",
@@ -39,6 +40,24 @@ my $CLICK_OLD_DEFAULTS = {
     FIELDS => "course as courseid,count(*) as clicks",
     CONDITIONS => "course in ( {course} )",
     GROUP => "group by course",
+    CACHE => { namespace => "QILT", default_expires_in => "7 days" }
+};
+
+my $USER_DHIT_NEW_DEFAULTS = {
+    TABLE => "moodle.mdl_logstore_standard_log",
+    FIELDS => "courseid,userid,count(id)",
+    CONDITIONS => "courseid in ( {courseid} ) and userid in ( {userid} ) and " .
+                  "component like 'mod_forum%'",
+    GROUP => "group by courseid,userid",
+    CACHE => { namespace => "QILT", default_expires_in => "7 days" }
+};
+
+my $USER_DHIT_OLD_DEFAULTS = {
+    TABLE => "moodle.mdl_log",
+    FIELDS => "course,userid,count(id)",
+    CONDITIONS => "course in ( {course} ) and userid in ( {userid} ) and " .
+                  "module = 'forum'",
+    GROUP => "group by course,userid",
     CACHE => { namespace => "QILT", default_expires_in => "7 days" }
 };
 
@@ -464,5 +483,89 @@ sub getUserCoursePosts( $$ ) {
     }
 
     return $userPosts;
+}
+
+#---------------------------------------------------------------------------
+# getUsesrClicks( $course_id, $shortname, $HIT_TYPE )
+# - given a Moodle course id and its shortname
+# - Identify if it's an old or new course and then use appropriate methods
+#   to count the number of total clicks made on course site by every user
+#   of the course
+# - HIT_TYPE
+#   - empty is just clicks
+#   - DHIT is DHITS
+
+sub getUsersClicks( $$ ) {
+    my $course_id = shift;
+    my $shortname = shift;
+    my $hitType = shift || "CLICKS";
+
+    my %config = ( 
+        "CLICKS" => { "OLD" => $STUDENT_CLICK_OLD_DEFAULTS,
+                      "NEW" => $STUDENT_CLICK_NEW_DEFAULTS },
+        "DHITS" => { "NEW" => $USER_DHIT_NEW_DEFAULTS,
+                     "OLD" => $USER_DHIT_OLD_DEFAULTS }
+    );
+
+    if ( ! exists $config{$hitType} ) {
+        die "can't find config for hitType $hitType\n";
+    }
+
+    #-- get all users -- NewModle
+    my $students = getStudents( $course_id );
+    my @studentIds = map { $_->{userid} } @{$students->{DATA}};
+    my $teachers = getTeachers( $course_id );
+    my @teacherIds = map { $_->{userid} } @{$teachers->{DATA}};
+
+    my @userIds = @studentIds;
+    push( @userIds, @teacherIds );
+
+    #-- figure out if it's an old or new
+    #my $default = $STUDENT_CLICK_NEW_DEFAULTS;
+    my $default = $config{$hitType}->{NEW};
+    my $keys = { courseid => $course_id, userid => \@userIds };
+
+    if ( identifyCourseAge( $shortname ) eq "OLD" ) {
+        $default = $config{$hitType}->{OLD};
+        $keys = { course => $course_id, userid => \@userIds };
+    }
+
+    my $clicks = NewModel->new( %$default, CONFIG => $CONFIG,
+                    KEYS => $keys);
+
+    if ( $clicks->Errors() ) {
+        print "*** ERROR getting clicks\n";
+        print $clicks->DumpErrors();
+        die;
+    }
+
+    #-- add in the roleid 0 - student, 1 teacher
+    my %userHash = map { ( $_->{userid} => $_ ) } @{$clicks->{DATA}};
+    foreach my $id ( @studentIds  ) {
+        $userHash{$id}->{roleid} = 0;
+    }
+    foreach my $id ( @teacherIds ) {
+        $userHash{$id}->{roleid} = 1;
+    }
+
+    return $clicks->{DATA};
+}
+
+#-----------------------------------------------------------------
+# $age = identifyCourseAge( $shortname )
+# - given course shortname EDC3100_2015_1
+# - return NEW unless course is before 2015_2, else return OLD
+
+sub identifyCourseAge( $ ) {
+    my $shortname = shift;
+
+    my @offering = split /_/, $shortname;
+
+    #-- anything before 2015 is old
+    return "OLD" if ( $offering[1] < 2015 );
+    #-- S1 2015 is OLD
+    return "OLD" if ( $offering[1] == 2015 and $offering[2] == 1 );
+    #-- anything else is NEW
+    return "NEW";
 }
 
