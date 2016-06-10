@@ -21,13 +21,39 @@
     ];
 
     var layout = {
-        title : "Clicks / Grades for <TMPL_VAR NAME="ANALYTIC_NAME">",
+        title : "<TMPL_VAR NAME="ANALYTIC_NAME">",
         yaxis : { title: "# of total clicks" },
         xaxis : { title: 'Grade' }
     };
 
     Plotly.newPlot('myDiv', data, layout );
 </script>
+
+
+<nav id="subMenu">
+  <ul id="courseMenu">
+  <TMPL_LOOP NAME="SUBSETS">
+    <li>
+        <a href="<TMPL_VAR NAME="LINK">"><TMPL_VAR NAME="LABEL"></a>
+    </li>
+  </TMPL_LOOP>
+  </ul>
+</nav>
+
+  <div style="margin:auto; width:60%">
+    <h3>Explanation</h3>
+    <p>The total number of clicks on a course site are divided up into two catego
+ries:</p>
+    <ol>
+       <li> Forum - a click on a discussion forum.
+            <p>Typically the main (but not only) form of human-human interaction.
+</p> </li>
+       <li> Content - a click anywhere else on the course site.</li>
+    </ol>
+  </div>
+
+
+
 <TMPL_ELSE>
   <div style="margin:auto">
     <h1>No matching data</h1>

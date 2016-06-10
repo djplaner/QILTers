@@ -111,7 +111,7 @@ sub Display {
  
     # Analytic name is title for the page
     # - course, offering, subset
-    my $analyticName = $self->{VALUES}->{COURSE} . " " .
+    my $analyticName = "clicks/grade for " .$self->{VALUES}->{COURSE} . " " .
                        $self->{VALUES}->{OFFERING} . " " .
                        $self->{VALUES}->{SUBSET};
     $self->{TEMPLATE}->param( ANALYTIC_NAME => $analyticName );

@@ -13,7 +13,8 @@ use strict;
 use Data::Dumper;
 
 my %ANALYTIC_TRANSLATE = (
-    clickGrades => "clicks by grade"
+    clickGrades => "clicks/grade",
+    dhits => "content/forum %"
 );
 
 sub new {

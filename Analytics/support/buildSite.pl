@@ -22,10 +22,12 @@ use webfuse::lib::QILTers::Analytics::analyticFactory;
 my %COURSES = (
     EDC3100 => {
         "2015_1" => {
-            clickGrades => [ qw/ all Online Springfield Toowoomba Fraser_Coast / ]
+            clickGrades => [ qw/ all Online Springfield Toowoomba Fraser_Coast / ],
+            dhits => [ qw/ all Online Springfield Toowoomba Fraser_Coast / ]
         },
         "2015_2" => {
-            clickGrades => [ qw/ all  / ]
+            clickGrades => [ qw/ all  / ],
+            dhits => [ qw/ all / ]
         }
     },
 
@@ -59,25 +61,29 @@ my $PATH = "/qilters";
 my $factory = QILTers::Analytics::analyticFactory->new();
 
 foreach my $course ( keys %COURSES ) {
+print "COURSE is $course\n";
     foreach my $offering ( keys %{$COURSES{$course}} ) {
-print "******** OFfering is $offering\n";
+print "** OFfering is $offering\n";
         foreach my $analytic ( keys %{$COURSES{$course}->{$offering}} ) {
+print "**** analytics is $analytic\n";
             foreach my $subset ( @{$COURSES{$course}->{$offering}->{$analytic}} ) {
-
-print "SUBSET is $subset\n";
+print "****** SUBSET is $subset\n";
                 $subset =~ s/_/ /g;
 
                 my $model = $factory->getModel( 
                                 OFFERING => "${course}_$offering",
                                 ANALYTIC => $analytic );
-
+#print "MOdel is " . ref( $model ) . "\n";
+#print Dumper( $model->{DATA} );
                 #-- might need to provide "template" file of other information here
                 my $view = $factory->getView( MODEL => $model, 
                         COURSES => \%COURSES, PATH => $PATH );
+print "VIEW is " . ref( $view ) . "\n";
                 my $string = $view->Display( SUBSET => $subset,
                             COURSE => $course, OFFERING => $offering,
                                          COURSES => \%COURSES );
-
+#print $string;
+#die;
                 $subset =~ s/ /_/g;
                 writePage( OFFERING => "${course}_$offering", 
                         ANALYTIC => $analytic, SUBSET => $subset, 

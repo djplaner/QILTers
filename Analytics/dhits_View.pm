@@ -115,7 +115,8 @@ print "COUNT is $count\n";
  
     # Analytic name is title for the page
     # - course, offering, subset
-    my $analyticName = $self->{VALUES}->{COURSE} . " " .
+    my $analyticName = "Content/Forum click % for " .
+                        $self->{VALUES}->{COURSE} . " " .
                        $self->{VALUES}->{OFFERING} . " " .
                        $self->{VALUES}->{SUBSET};
     $self->{TEMPLATE}->param( ANALYTIC_NAME => $analyticName );
@@ -161,7 +162,7 @@ sub plotly( ) {
     my $forumPercent = sprintf "%3.1f", $forumClicks * $percent;
 
     my $clicks = "$contentPercent, $forumPercent";
-    my $clicksLabels = "Content, Forum";
+    my $clicksLabels = "\"Content\", \"Forum\"";
 
     $self->{TEMPLATE}->param( clicks => $clicks );
     $self->{TEMPLATE}->param( clicksLabels => $clicksLabels );

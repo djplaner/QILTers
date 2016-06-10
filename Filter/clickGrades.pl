@@ -29,7 +29,9 @@ my $QILT_Q_DEFAULTS = {
                   "q_type={q_type}"
 };
 
-my @OFFERINGS = (  qw/ EDC3100_2015_1 EDC3100_2015_2 / );
+#my @OFFERINGS = (  qw/ EDC3100_2015_1 EDC3100_2015_2 / );
+my @OFFERINGS = (  qw/ EDP4130_2015_1  / );
+
 
 my $ids = getCourseDetails( \@OFFERINGS );
 
