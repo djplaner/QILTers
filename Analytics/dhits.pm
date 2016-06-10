@@ -76,6 +76,23 @@ sub new {
     return $self;
 }
 
+#-------------------------------------------------------------
+# getClickGrades()
+# - return a clickGrades object with the same offering
+# - used by all content / forum clicks analytic
+
+sub getClickGrades() {
+    my $self = shift;
+
+    $self->{CLICK_GRADES} = QILTers::Analytics::clickGrades->new( 
+                                OFFERING => $self->{KEYS}->{OFFERING} );
+
+    if ( $self->{CLICK_GRADES}->Errors() ) {
+        $self->{CLICK_GRADES}->DumpErrors();
+        die;
+    }
+}
+
 1;
 
 
