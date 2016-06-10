@@ -1,0 +1,35 @@
+
+<TMPL_INCLUDE NAME="header.html">
+
+<TMPL_IF NAME="clicks">
+<script type="text/javascript" src="/qilters/plotly-latest.min.js"></script>
+
+<div id="myDiv"></div>
+
+<script>
+    var data = [
+        {
+            values : [ <TMPL_VAR NAME="clicks"> ],
+            labels : [ <TMPL_VAR NAME="clicksLabels"> ],
+            type: 'pie',
+            name: '<TMPL_VAR NAME="ANALYTIC_NAME">'
+        },
+    ];
+
+    var layout = {
+        title : "<TMPL_VAR NAME="ANALYTIC_NAME">",
+        height: 400,
+        width: 500
+    };
+
+    Plotly.newPlot('myDiv', data, layout );
+</script>
+<TMPL_ELSE>
+  <div style="margin:auto">
+    <h1>No matching data</h1>
+    <p>The chosen combination of factors doesn't appear to have any matching data.</p>
+  </div>
+</TMPL_IF>
+
+
+<TMPL_INCLUDE NAME="footer.html">
