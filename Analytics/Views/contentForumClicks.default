@@ -50,7 +50,7 @@
 
 
 <TMPL_ELSE>
-  <div style="margin:auto">
+  <div style="margin:auto; width:60%">
     <h1>No matching data</h1>
     <p>The chosen combination of factors doesn't appear to have any matching data.</p>
   </div>

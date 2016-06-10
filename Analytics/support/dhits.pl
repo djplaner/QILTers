@@ -15,19 +15,20 @@ use webfuse::lib::QILTers::Analytics::dhits;
 use webfuse::lib::QILTers::Analytics::dhits_View;
 
 
-my $model = QILTers::Analytics::dhits->new( OFFERING => "EDC3100_2015_1" );
+my $model = QILTers::Analytics::dhits->new( OFFERING => "EDP4130_2015_1" );
+print Dumper( $model );
+foreach my $set ( qw/ all / ) {
 
-#foreach my $set ( qw/ all Online Springfield Toowoomba  / ) {
-#
-#    my $subset = $model->getSubset( $set );
-#    my $all = $model->getSubsetQuantStats( $subset );
-#
-#    next if ( $all->count() == 0 );
-#print "**** SET $set\n";
-#foreach my $field ( qw/ count sum mean min max standard_deviation / ) {
-#    print "-- $field " . $all->$field() . "\n";
-#}
-#}
+    my $subset = $model->getSubset( $set );
+    my $all = $model->getSubsetQuantStats( $subset );
+
+    next if ( $all->count() == 0 );
+print "**** SET $set\n";
+foreach my $field ( qw/ count sum mean min max standard_deviation / ) {
+    print "-- $field " . $all->$field() . "\n";
+}
+}
+die;
 
 #print Dumper( $model->{TOTAL_DHITS} );
 

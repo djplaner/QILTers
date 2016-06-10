@@ -31,28 +31,69 @@ my %COURSES = (
         }
     },
 
+    EDS4250 => {
+        "2015_1" => {
+            clickGrades => [ qw/ all / ],
+            dhits => [ qw/ all / ]
+        },
+        "2015_2" => {
+            clickGrades => [ qw/ all / ],
+            dhits => [ qw/ all / ]
+        },
+    },
     #-- the empty ones for now
     EDS2401 => {
-        "2015_1" => {}
+        "2015_1" => {
+            clickGrades => [ qw/ all / ],
+            dhits => [ qw/ all / ]
+        },
+        "2015_2" => {
+            clickGrades => [ qw/ all / ],
+            dhits => [ qw/ all / ]
+        },
     },    
     EDX3270 => {
-        "2015_1" => {}
+        "2015_1" => {
+            clickGrades => [ qw/ all / ],
+            dhits => [ qw/ all / ]
+        },
+        "2015_2" => {
+            clickGrades => [ qw/ all / ],
+            dhits => [ qw/ all / ]
+        },
     },
     EDX3160 => {
-        "2015_1" => {}
+        "2015_2" => {
+            clickGrades => [ qw/ all / ],
+            dhits => [ qw/ all / ]
+        },
     },
     EDC4000 => {
-        "2015_1" => {}
+        "2015_1" => {
+            clickGrades => [ qw/ all / ],
+            dhits => [ qw/ all / ]
+        },
+        "2015_2" => {
+            clickGrades => [ qw/ all / ],
+            dhits => [ qw/ all / ]
+        },
     },
     EDC1400 => {
-        "2015_1" => {}
+        "2015_1" => {
+            clickGrades => [ qw/ all / ],
+            dhits => [ qw/ all / ]
+        },
+        "2015_2" => {
+            clickGrades => [ qw/ all / ],
+            dhits => [ qw/ all / ]
+        },
     },
     EDP4130 => {
-        "2015_1" => {}
+        "2015_1" => {
+            dhits => [ qw/ all / ] ,
+            clickGrades => [ qw/ all / ] 
+        }
     },
-    EDE4010 => {
-        "2015_1" => {}
-    }
 );
 
 my $DOCUMENT_ROOT = "/Applications/mappstack-5.4.36-0/apache2/htdocs/qilters";

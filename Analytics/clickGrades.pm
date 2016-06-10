@@ -131,7 +131,7 @@ sub addUserExtras() {
         die;
     }
     if ( $q->NumberOfRows() == 0 ) {
-        print "No qilt_quantities data found\n";
+        print "No user extras data found\n";
         print Dumper( $keys );
         die;
     }

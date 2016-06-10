@@ -30,7 +30,10 @@ my $QILT_Q_DEFAULTS = {
 };
 
 #my @OFFERINGS = (  qw/ EDC3100_2015_1 EDC3100_2015_2 / );
-my @OFFERINGS = (  qw/ EDP4130_2015_1  / );
+my @OFFERINGS = (  qw/ EDS4250_2015_1 EDS4250_2015_2 EDC1400_2015_1
+EDC1400_2015_2 EDS2401_2015_2 EDS2401_2015_1 EDX3160_2015_2 EDX3270_2015_1
+EDX3270_2015_2 EDC4000_2015_2 EDC4000_2015_1 / );
+
 
 
 my $ids = getCourseDetails( \@OFFERINGS );
@@ -43,8 +46,8 @@ if ( $ids->NumberOfRows == 0 ) {
 foreach my $offering ( @{$ids->{DATA}} ) {
     my $clicks = getUsersClicks( $offering->{id}, $offering->{shortname} );
     #-- return hash with fields count and userid
-print Dumper( $clicks );
-die;
+#print Dumper( $clicks );
+#die;
 
     #-- convert the clicks into the data we want to submit
     my @offering = split /_/, $offering->{shortname};
@@ -59,6 +62,8 @@ die;
                      quantity => $user->{count} };
         push @data, $data;
     }
+#print Dumper( \@data );
+#die;
 
     insertQuantities( \@data );
 }
