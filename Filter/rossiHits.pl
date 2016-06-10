@@ -1,9 +1,13 @@
 #
-# FILE:     clickGrades.pl
-# PURPOSE:  Calculate the total number of clicks in a course site for
-#           all users of that course and add an entry for each user
-#           into the qilt_quantities table
-#           q_type = TOTAL CLICKS
+# FILE:     rossiHits.pl
+# PURPOSE:  Add into qilt_quantities rows of the format
+#
+#   - USER DHITS is # of clicks on discussion forums (and perhaps others)
+#   - all for a student of a staff member can be added up to get totals
+#   - can use TOTAL CLICKS to get overall percentage
+#   
+# ?? Is a forum the only place such an interaction can occur?
+#   
 
 BEGIN
 {
@@ -17,7 +21,6 @@ use Data::Dumper;
 
 my $WEBFUSE_HOME=$WebfuseConfig::WEBFUSE_HOME;
 my $DATA_DIR="$WebfuseConfig::WEBFUSE_DATA/databases";
-my $EDC3100_CONFIG = "$DATA_DIR/NewMoodle.txt";
 my $CONFIG = "$DATA_DIR/StudyDesk2015.txt";
 
 require "$WEBFUSE_HOME/lib/QILTers/library.pl";
@@ -39,7 +42,7 @@ if ( $ids->NumberOfRows == 0 ) {
 
 #-- cycle through the offerings 
 foreach my $offering ( @{$ids->{DATA}} ) {
-    my $clicks = getUsersClicks( $offering->{id}, $offering->{shortname} );
+    my $clicks = getUsersClicks( $offering->{id}, $offering->{shortname}, "DHITS" );
     #-- return hash with fields count and userid
 
     #-- convert the clicks into the data we want to submit
@@ -51,7 +54,7 @@ foreach my $offering ( @{$ids->{DATA}} ) {
                      course => $offering[0],
                      year => $offering[1],
                      term => $offering[2],
-                     q_type => "TOTAL CLICKS",
+                     q_type => "USER DHITS",
                      quantity => $user->{count} };
         push @data, $data;
     }

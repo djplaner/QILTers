@@ -7,107 +7,181 @@
 #
 #
 
+package QILTers::Analytics::analyticFactory;
+
 use strict;
+use Data::Dumper;
 
-package analyticFactory;
+my %ANALYTIC_TRANSLATE = (
+    clickGrades => "clicks by grade"
+);
 
-use CGI;
+sub new {
+    my $proto = shift;
+    my $class = ref( $proto ) || $proto;
 
-sub new
-{
-  my $debug = 0;
-  print STDERR "\nDebugging analyticFactory\n1. shift" if ( $debug );
+    my $self = {};
+    bless( $self, $class );
 
-  my $proto = shift;
-  my $class = ref( $proto ) || $proto;
-
-  my $self = {};
-  bless( $self, $class );
-
-  print STDERR "\n2. new CGI (file uploads also happen here)" if ( $debug );
-
-  # grab the query string
-  # Any file uploads that are being done will happen here,
-  # so this could take a while
-  my $query = new CGI;
-
-  #-- are we sending "text/html" or some other type of file
-  my $header = $query->param( "header" );
-
-  if ( $header eq "" )
-  {
-    print $query->header;
-  }
-  elsif ( $header ne "none" )
-  {
-    print $query->header( -type => $header );
-  }
-
-  print STDERR "\n3. path info" if ( $debug );
-
-  #-- figure out which object and method we want
-  my $info = $query->path_info();
-
-  my $object = $info;
-  $object =~ s#.*/object/([^/]*).*#$1#g;
-
-  # strip out any .csv from the object name
-  # as this is only used to get the browser to treat the output
-  # as a .csv file
-  $object =~ s#\.csv$##;
-  $object =~ s#\.txt$##;
-
-  print STDERR "\n4. require object" if ( $debug );
-
-  #-- Create the object
-  eval{ require "webfuse/lib/Objects/${object}.pm" } ;
-
-  if ( $@ !~ /^$/ )
-  {
-    print "No object file: $@" ;
     return $self;
-  }
-  else
-  {
-    print STDERR "\n5. call object->new" if ( $debug );
-
-    my $class = $object->new( $query );
-
-    print STDERR "\n6. Done\n\n" if ( $debug );
-
-    return $class;
-  }
 }
 
-#--------------------------------------------------
-# new_test( $object, $method )
-# - constructor for when called locally
+#-----------------------------------------------------------------
+# getModel( OFFERING => ANALYTIC => )
+# - create and return an object of the appropriate type
 
-sub new_test
-{
-  my $proto = shift;
-  my $class = ref( $proto ) || $proto;
+sub getModel() {
+    my $self = shift;
+    my %args = @_;
 
-  my $self = {};
-  bless( $self, $class );
+    my $analytic = $args{ANALYTIC};
 
-  my $object = shift || "WebfuseObject";
+    #-- maybe do some smart work here eventually
 
-  eval{ require "${object}.pm" } ;
+    #-- Create the model and the view
+    eval{ require "webfuse/lib/QILTers/Analytics/${analytic}.pm" } ;
 
-  if ( $@ !~ /^$/ )
-  {
-    #$self->{Error} = "No object file: $@" ;
-    print "No object file: $@" ;
-    return $self;
-  }
-  else
-  {
-    my $class = $object->new;
-    return $class;
-  }
+    $analytic = "QILTers::Analytics::" . $analytic;
+
+    if ( $@ !~ /^$/ ) {
+        die "No object file for $analytic: $@" ;
+    } else {
+        my $class = $analytic->new( %args );
+
+        return $class;
+    }
 }
 
-#--------------------------------------------------
+#-----------------------------------------------------------------
+# getView( MODEL => $model, COURSES => $offerings PATH => $path)
+# - based on the model passed in create the view object, pass it $model
+#   and return
+
+sub getView( $) {
+    my $self = shift;
+    my %args = @_;
+
+    my $model = $args{MODEL};
+    my $offerings = $args{COURSES};
+    my $path = $args{PATH};
+
+    my $analytic = ref( $model ) . "_View";
+    my $class_path = $analytic;
+    $class_path =~ s#::#/#g ;
+    #-- maybe do some smart work here eventually
+
+    #-- Create the model and the view
+    eval{ require "webfuse/lib/${class_path}.pm" } ;
+
+    if ( $@ !~ /^$/ ) {
+        die "No object file for $analytic: $@" ;
+    } else {
+        my $class = $analytic->new( MODEL => $model );
+
+        $class->{PATH} = $path;
+        $class->{COURSES} = $self->constructViewOfferings( $offerings, $path );
+
+        return $class;
+    }
+}
+
+#-----------------------------------------------------------------
+# constructViewOfferings( \%OFFERINGS, $path )
+# - construct the complex data structure required to generate the nested
+#   menus in the view
+# - Need to convert
+#   my %COURSES = (
+#       EDC3100 => {
+#           "2015_1" => {
+#               clickGrades => [ qw/ all / ]
+#           },        "2015_2" => {
+#               clickGrades => [ qw/ all / ]
+#           }
+#       },
+#
+# INTO
+#  { 
+#       LABEL => EDC3100, LINK => "URL or NULL"
+#       OFFERINGS => [
+#           { 
+#               LABEL => "2015 S2", LINK => "URL" ||undef,
+#               ANALYTICS => { 
+#                   [ LABEL => "Click grades", LINK => "" ],
+#                   [ LABEL => "Rossi", LINK => "" ],
+#                   [ LABEL => "Paths", LINK => "" ] } ],
+#               },
+#           },
+#           { 
+#               LABEL => "EDS2401", LINK => undef, MENU => [] 
+#           },
+#           { 
+#               LABEL => "EDX3270", LINK => undef, MENU => [] )
+#           },
+#       ]
+#   }
+#]
+
+sub constructViewOfferings( $ ) {
+    my $self = shift;
+    my $offerings = shift;
+    my $path = shift;
+
+    my @viewOfferings;
+
+    foreach my $course ( sort keys %$offerings) {
+        #-- start constructing the element
+        my $element = { LABEL => $course };
+
+        #-- hold all information about the offerings for a course
+        my @courseOfferings;
+        #-- loop through each of the offerings
+        foreach my $offering ( keys %{$offerings->{$course}} ) {
+            my $numAnalytics = keys %{$offerings->{$course}->{$offering}};
+
+            #-- if there are analytics then do those, otherwise
+            #   set it up as zero
+
+            #-- array to hold all the analytics information
+            my $offeringAnalytic;
+            my @offeringAnalytics; 
+
+            if ( $numAnalytics > 0 ) {
+                #-- give a link to the top level course menu
+                $element->{LINK} = ".";
+
+                #-- set up label for the course offering
+                $offeringAnalytic = { LABEL => $offering, LINK => "." };
+                
+                #-- loop through each of the analytics and add array entries
+                #   for each and add something to $offeringAnalytic->{ANALYTICS}
+                my @analytics;
+                foreach my $analytic ( 
+                        keys %{$offerings->{$course}->{$offering}} ) {
+
+                    my $subset = $offerings->{$course}->{$offering}->{$analytic}->[0] . ".html";
+
+                    $subset = "index.html" if ( $subset eq "all.html" );
+                    push @analytics, {
+                        LABEL => $ANALYTIC_TRANSLATE{$analytic},
+                        LINK => "$path/$course/$offering/$analytic/$subset"
+                    };
+                }
+                $offeringAnalytic->{ANALYTICS} = \@analytics;
+
+                push @{$element->{OFFERINGS}}, $offeringAnalytic;
+            }
+
+        }
+        push @viewOfferings, $element;
+    }
+#print Dumper( \@viewOfferings );
+    return \@viewOfferings;
+#        #-- get the components of the offering
+#        my @offerings = split /_/, $offerings{$offering};
+#        my $course = $0; my $year = $1; my $term = $2;
+
+         
+}
+
 
 1;

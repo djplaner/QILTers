@@ -1,21 +1,21 @@
 
+q_type
+- TOTAL CLICKS
+
+roleid
+- 0 - student
+- 1 - teacher
+
 create table qilt_quantities (
-  id *** sequence ***
+  id bigserial PRIMARY KEY,
+  userid bigint NOT NULL,
+  roleid bigint NOT NULL DEFAULT 0,
   course character varying(10),
   term smallint,
   year smallint,
-  userid 
-  grade character varying(3),
-  gpa decimal,
-  program character varying(50),
-  plan character varying(50),
-  birthdate date,
-  mode character varying(20),
-  postal_code smallint,
-  completed_units smallint,
-  transferred_units smallint,
-  acad_load character(1),
-  UNIQUE ( id, course, term, year )
+  q_type character varying(50),
+  quantity numeric,
+  CONSTRAINT u_t_q UNIQUE( userid, course, term, year, q_type )
 )
 
 

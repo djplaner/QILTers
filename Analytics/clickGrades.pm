@@ -1,19 +1,21 @@
 #
-# FILE:		BAM::3100::MoodleUsers.pm
-# PURPOSE:	Model to generate statistics about 3100 blogs from a BIM
-#           database
+# FILE:		QILTers::Analytics::clickGrades.pm
+# PURPOSE:	Model to map clickGrades (and various filters) for a given course
 #
-#	Two constructors
-#	new - gets all user details
+#   $model = $$->new( OFFERING => "EDC3100_2015_1", Q_TYPE =>  );
+#   - gather user demographic data for that offering
+#     - includes grades 
+#   - gather total clicks
+#     - include role
 #
-# AUTHOR:	David Jones
-# HISTORY:	18 March 2013	Started
-#           26 March 2016   Added findByName()
+#   - merge all this into a single array hash
+#   - allow calling scripts to chop and change
+#
 #
 # TO DO:	
 #
 
-package BAM::3100::MoodleUsers;
+package QILTers::Analytics::clickGrades;
 
 $VERSION = '0.5';
 
@@ -23,7 +25,7 @@ use Data::Dumper;
 
 use webfuse::lib::NewModel;
 
-@BAM::3100::MoodleUsers::ISA = ( "NewModel" );
+@QILTers::Analytics::clickGrades::ISA = ( "NewModel" );
 
 #--------------------
 # Globals
@@ -31,229 +33,158 @@ use webfuse::lib::NewModel;
 use webfuse::lib::WebfuseConfig;
 my $WEBFUSE_HOME=$WebfuseConfig::WEBFUSE_HOME;
 my $DATA_DIR="$WebfuseConfig::WEBFUSE_DATA/databases";
-#my $CONFIG = "$DATA_DIR/moodle.txt";
-my $CONFIG = "$DATA_DIR/NewMoodle.txt";
-
-my $BAM_DATA_DIR="$WebfuseConfig::WEBFUSE_DATA/BAM";
+my $CONFIG = "$DATA_DIR/StudyDesk2015.txt";
 
 # CONDITIONS is constructed in handle_params based on parameters
 # passed in
 
-my $EDC3100_2014_S1_defaults = {
-  TABLE => "mdl_user",
-  FIELDS => "id,username,firstname,lastname,email,phone1,idnumber,usqmoodleid",
-  CONDITIONS => "id in ( select distinct userid from mdl_groups_members where groupid in (26, 29,28,36,25,31,24 ,38 ,32 ,27 ,30 ,34 ,33 ,41 ,35 ,37 ,44 ,45 ,40 ,42 ,39 ,43) )"
+my $QILT_Q_DEFAULTS = {
+    TABLE => "qilt_quantities",
+    FIELDS => "userid,roleid,course,term,year,q_type,quantity",
+    CONDITIONS => "course={course} and term={term} and year={year} and " .
+                  "q_type={q_type}"
 };
-
-my $defaults = {
-  TABLE => "mdl_groups_members,mdl_groups,mdl_user",
-  FIELDS => "mdl_user.id,username,firstname,lastname,email,phone1,mdl_user.idnumber,usqMoodleId",
-  CONDITIONS => "mdl_groups.courseid={COURSE_ID} and mdl_groups.id in ( {GROUP_ID} ) and mdl_groups_members.groupid=mdl_groups.id and mdl_user.id=mdl_groups_members.userid group by mdl_user.id" 
-   #-- saving was working
-  #CONDITIONS => "mdl_groups.courseid={COURSE_ID} and mdl_groups_members.id in ( {GROUP_ID} ) and mdl_groups_members.groupid=mdl_groups.id and mdl_user.id=mdl_groups_members.userid group by mdl_user.id" 
-};
-
-my @REQUIRED_PARAMETERS = ( qw/ COURSE_ID GROUP_ID / );
-
-my %TRANSLATE_PARAMETERS = (
-    "EDC3100" => {
-#        "2014_S1" => { COURSE_ID => 3,  GROUP_ID => [26, 29,28,36,25,31,24 ,38 ,32 ,27 ,30 ,34 ,33 ,41 ,35 ,37 ,44 ,45 ,40 ,42 ,39 ,43 ] },
-        "2014_S2" => { COURSE_ID => 4, GROUP_ID => [46] },
-        "2015_S1" => { COURSE_ID => 3, GROUP_ID => [27] },
-        "2015_S2" => { COURSE_ID => 5, GROUP_ID => [53] },
-        "2016_S1" => { COURSE_ID => 15, GROUP_ID => [176] }
-    },
-    "EDU8117" => {
-        "2014_S2" => { COURSE_ID => 5, GROUP_ID => [68] },
-        "2015_S2" => { COURSE_ID => 6, GROUP_ID => [26] }
-    }
-);
-
-
-#----------
-# Database parameters to get data from mdl_user_extras
 
 my $EXTRAS_DEFAULTS = {
     TABLE => "mdl_user_extras",
-    FIELDS => "id,program,plan,gpa,completed_units,postal_code,birthdate,mode,dropped_course",
-    CONDITIONS => " id in (ID)"
+    FIELDS => "userid,course,term,year,mark,grade,gpa,program,plan,birthdate,mode,postal_code,completed_units,transferred_units,acad_load",
+    CONDITIONS => "course={course} and term={term} and year={year}"
 };
 
-my @EXTRAS_REQUIRED_PARAMETERS = ( qw/ ID / );
+my @REQUIRED_PARAMETERS = ( qw/ OFFERING course term year q_type / );
 
 
 #-------------------------------------------------------------
 # new(  )
 
-sub new
-{
-  my $proto = shift;
-  my $class = ref($proto) || $proto;
-  my $self = {};
+sub new {
+    my $proto = shift;
+    my $class = ref($proto) || $proto;
+    my $self = {};
     
-  my %args = @_;
+    my %args = @_;
 
-  bless( $self, $class );
+    bless( $self, $class );
 
-  return $self if ( ! $self->HandleParams( %args ) );
+    #-- start with QILT quantities data as this one will be more inclusive
+    # - teaching staff may not have anything in mdl_user_extras
+    return $self if ( ! $self->HandleParams( %args ) );
 
-  $self->createUIDhash();
-  return $self;
+    #-- get the mdl_user_extras ******
+    $self->addUserExtras();
+ 
+    #-- set up different sub-arrays based on roleid
+    $self->setUpRoleData();
+
+    return $self;
 }
 
 #---------------------------------------------------------------------------
 # HandleParams
 # - check the parameters passed in
 
-sub HandleParams
-{
-  my $self = shift;
-  my %args = @_;
+sub HandleParams {
+    my $self = shift;
+    my %args = @_;
 
-  #-- setup the defaults
-  %{$self->{DEFAULTS}} = %$defaults;
-  @{$self->{REQUIRED_PARAMETERS}} = @REQUIRED_PARAMETERS;
-  $self->{CONFIG} = $args{CONFIG} || $CONFIG;
+    #-- setup the defaults
+    %{$self->{DEFAULTS}} = %$QILT_Q_DEFAULTS;
+    @{$self->{REQUIRED_PARAMETERS}} = @REQUIRED_PARAMETERS;
+    $self->{CONFIG} = $args{CONFIG} || $CONFIG;
 
-  #-- have we got COURSE and TERM - can we get COURSE_ID GROUP_ID
-  my $course = $args{COURSE};   my $term = $args{TERM};
+    $args{q_type} = "TOTAL CLICKS" if ( ! exists $args{q_type} ) ;
 
-  if ( exists $TRANSLATE_PARAMETERS{$course}->{$term} ) {
-        $args{COURSE_ID} = $TRANSLATE_PARAMETERS{$course}->{$term}->{COURSE_ID}; 
-        $args{GROUP_ID} = $TRANSLATE_PARAMETERS{$course}->{$term}->{GROUP_ID}; 
-  }
+    #-- convert OFFERING into elements
+    if ( exists $args{OFFERING} ) {
+        my @offerings = split /_/, $args{OFFERING};
+        $args{course} = $offerings[0];
+        $args{year} = $offerings[1];
+        $args{term} = $offerings[2];
 
-  return $self->SUPER::HandleParams( %args );
+        $self->{OFFERING}->{course} = $offerings[0];
+        $self->{OFFERING}->{year} = $offerings[1];
+        $self->{OFFERING}->{term} = $offerings[2];
+    }
+ 
+    return $self->SUPER::HandleParams( %args );
 }
 
 
-#-----------------------------------------------------------------
-# createUIDhash
-# - create hash into data with key phone1
-# - add in IDNUMBER as well
+#---------------------------------------------------------------------------
+# addUserExtras
+# - add into DATA an entry EXTRAS with data mdl_user_extras table
+#   where available (not for staff)
 
-sub createUIDhash
-{
-  my $self = shift;
-
-  foreach my $row ( @{$self->{DATA}} )
-  {
-    $self->{UIDS}->{$row->{id}} = $row;
-    $self->{IDNUMBER}->{$row->{idnumber}} = $row;
-    $self->{USQ}->{$row->{usqmoodleid}} = $row;
-    $self->{EMAIL}->{$row->{email}} = $row;
-  }
-}
-
-#-----------------------------------------------------------------
-# addExtras
-# - add to DATA the information from the table mdl_user_extras
-#   for each user
-
-sub addExtras {
+sub addUserExtras() {
     my $self = shift;
 
-    $self->createUIDhash() if ( ! exists $self->{UIDS} );
+    my $keys = $self->{OFFERING};
 
-    #-- get the userids
-    my @userIds = keys %{$self->{UIDS}};
+    my $q  = NewModel->new( CONFIG => $CONFIG,
+                DEFAULTS => $EXTRAS_DEFAULTS,
+                KEYS => $keys );
 
-    #-- extra that data from the database
-    my $model = NewModel->new( CONFIG => $CONFIG,
-                                DEFAULTS => $EXTRAS_DEFAULTS,
-                          REQUIRED_PARAMETERS => \@EXTRAS_REQUIRED_PARAMETERS,
-                                ID => \@userIds, DEBUG => 1 );
-
-
-    if ( $model->Errors() ) {
-        print "****ERROR Can't get data - addExtras\n";
-        $model->DumpErrors();
+    if ( $q->Errors() ) {
+        $q->DumpErrors();
+        die;
+    }
+    if ( $q->NumberOfRows() == 0 ) {
+        print "No qilt_quantities data found\n";
+        print Dumper( $keys );
+        die;
     }
 
-    #-- merge the extras data into DATA
-    foreach my $row ( @{$model->{DATA}} ) {
-        if ( exists $self->{UIDS}->{$row->{id}} ) {
-            foreach my $key ( qw/ birthdate mode program postal_code
-                                     completed_units gpa plan /  ) {
-                $self->{UIDS}->{$row->{id}}->{$key} = $row->{$key};
-            }
-        }
-    }
+    #-- create a hash into $q->{DATA} based on userid
+    my %userId = map { ( $_->{userid} => $_ ) } @{$q->{DATA}};
 
-    #-- create a hash PLAN based on the plan
-    # - Program == "BEarly Childhood" - go to 'EarlyChild'
-    # - Plan can be 'Seconday+????'  '* Secondary'
-    PLAN: foreach my $row ( @{$self->{DATA}} ) {
-
-        if ( $row->{program} eq "BVocationalEduc&Training" ) {
-            push @{$self->{PLAN}->{VET}}, $row;
-            next PLAN;
-        } 
-
-        if ( $row->{program} eq "BEarly Childhood" || 
-             $row->{program} eq "BECH" ) {
-            push @{$self->{PLAN}->{EarlyChild}}, $row;
-            next PLAN;
-        } 
-        if ( ! exists ( $row->{plan} ) || $row->{plan} eq "" ) {
-            push @{$self->{PLAN}->{NOPLAN}}, $row;
-            next PLAN;
-        }
-        
-        #-- secondary students
-        if ( $row->{plan} =~ m#Secondary# ||
-             $row->{plan} =~ m#Secondy# ||
-             $row->{plan} =~ m#Secondry# ) {
-            push @{$self->{PLAN}->{Secondary}}, $row;
-            if ( $row->{plan} =~ m#Health & PE# ) {
-                push @{$self->{PLAN}->{HPE}}, $row;
-            }
-            next PLAN;
-        }
-             
-        if ( $row->{plan} =~ m#Sport, Health & PE# ) {
-            push @{$self->{PLAN}->{HPE}}, $row;
-            
-            if ( $row->{plan} =~ m#\+Primary# ) {
-                push @{$self->{PLAN}->{Primary}}, $row;
-            } elsif ( $row->{plan} =~ m#\+Secondary# ) {
-                push @{$self->{PLAN}->{Secondary}}, $row;
-            }
-            next PLAN;
-        }
-
-        foreach my $plan ( qw/ SpecEduc Primary EarlyChild / ) {
-            if ( $row->{plan} =~ m#$plan# ) {    
-                push @{$self->{PLAN}->{$plan}}, $row;
-                next PLAN;
-            }
-        }
-
-        push @{$self->{PLAN}->{NOPLAN}}, $row;
-#        print Dumper( $row );
- #       die "MoodleUsers::AddExtras - NO match up plan\n";
-    }
-}
-
-#-----------------------------------------------------------------
-# findByName( $surname, $firstname )
-# - given a surname and firstname return the DATA row that matches
-# - WTF happens when there's a duplicate name???
-
-sub findByName {
-    my $self = shift;
-    my $surname = shift;
-    my $firstname = shift; 
-
+    #-- merge qilt data into $self->{DATA}
     foreach my $row ( @{$self->{DATA}} ) {
-
-        if ( $row->{lastname} =~ /^$surname$/i &&
-             $row->{firstname} =~ /^$firstname$/i ) {
-            return $row;    
-        }
+        $row->{EXTRAS} = $userId{ $row->{userid} };
+#        $row->{roleid} = $userId{ $row->{userid} }->{roleid};
     }
-    return 0;
 }
+
+#---------------------------------------------------------------------------
+# $self->setUpRoleData();
+# - create array BY_ROLE 
+# - each element contains an array of hashes based on roleid
+#   - 0 - student, 1 - teacher
+
+sub setUpRoleData() {
+    my $self = shift;
+
+    $self->{BY_ROLE} = [];
+
+    foreach my $role( qw/ 0 1 / ) {
+        #-- extract rows matching
+        @{$self->{BY_ROLE}->[$role]} = grep { $_->{roleid} == $role } 
+                                            @{$self->{DATA}};
+    }
+}
+
+#---------------------------------------------------------------------------
+# @{$students} = getSubset( $subset )
+# - return a subset of data from this model based on the $subset
+# - all - all students
+# 
+
+sub getSubset( $ ) {
+    my $self = shift;
+    my $subset = shift;
+
+    #-- all is just all students
+    if ( $subset eq "all" ) {
+        return $self->{BY_ROLE}->[0];
+    } elsif ( $subset eq "Online" || $subset eq "Toowoomba" ||
+              $subset eq "Springfield" || $subset eq "Fraser Coast" ) {
+        my @data = grep { $_->{EXTRAS}->{mode} eq $subset }
+                         @{$self->{BY_ROLE}->[0]};
+
+        return \@data;
+    }
+    return undef;
+}
+
 
 1;
 

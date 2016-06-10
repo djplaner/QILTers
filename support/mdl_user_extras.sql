@@ -1,5 +1,5 @@
 create table mdl_user_extras (
-  id bigint NOT NULL,
+  userid bigint NOT NULL,
   course character varying(10),
   term smallint,
   year smallint,
@@ -14,7 +14,7 @@ create table mdl_user_extras (
   completed_units smallint,
   transferred_units smallint,
   acad_load character(1),
-  UNIQUE ( id, course, term, year )
+  UNIQUE ( userid, course, term, year )
 )
 
 

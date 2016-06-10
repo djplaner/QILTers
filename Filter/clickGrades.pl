@@ -24,7 +24,7 @@ require "$WEBFUSE_HOME/lib/QILTers/library.pl";
 
 my $QILT_Q_DEFAULTS = {
     TABLE => "qilt_quantities",
-    FIELDS => "userid,course,term,year,q_type,quantity",
+    FIELDS => "userid,roleid,course,term,year,q_type,quantity",
     CONDITIONS => "course={course} and term={term} and year={year} and " .
                   "q_type={q_type}"
 };
@@ -41,12 +41,15 @@ if ( $ids->NumberOfRows == 0 ) {
 foreach my $offering ( @{$ids->{DATA}} ) {
     my $clicks = getUsersClicks( $offering->{id}, $offering->{shortname} );
     #-- return hash with fields count and userid
+print Dumper( $clicks );
+die;
 
     #-- convert the clicks into the data we want to submit
     my @offering = split /_/, $offering->{shortname};
     my @data;
     foreach my $user ( @{$clicks} ){
         my $data = { userid => $user->{userid},
+                     roleid => $user->{roleid},
                      course => $offering[0],
                      year => $offering[1],
                      term => $offering[2],
@@ -54,8 +57,6 @@ foreach my $offering ( @{$ids->{DATA}} ) {
                      quantity => $user->{count} };
         push @data, $data;
     }
-
-#    print Dumper( \@data );
 
     insertQuantities( \@data );
 }

@@ -1,6 +1,8 @@
 
+<TMPL_INCLUDE NAME="header.html">
 
-<script type="text/javascript" src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<TMPL_IF NAME="grades">
+<script type="text/javascript" src="/qilters/plotly-latest.min.js"></script>
 
 <div id="myDiv"></div>
 
@@ -18,5 +20,20 @@
         </TMPL_LOOP>
     ];
 
-    Plotly.newPlot('myDiv', data );
+    var layout = {
+        title : "Clicks / Grades for <TMPL_VAR NAME="ANALYTIC_NAME">",
+        yaxis : { title: "# of total clicks" },
+        xaxis : { title: 'Grade' }
+    };
+
+    Plotly.newPlot('myDiv', data, layout );
 </script>
+<TMPL_ELSE>
+  <div style="margin:auto">
+    <h1>No matching data</h1>
+    <p>The chosen combination of factors doesn't appear to have any matching data.</p>
+  </div>
+</TMPL_IF>
+
+
+<TMPL_INCLUDE NAME="footer.html">

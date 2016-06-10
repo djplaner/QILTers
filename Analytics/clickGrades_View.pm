@@ -67,31 +67,61 @@ sub new
 }
 
 #---------------------------------------------------
-# Display
-#
+# Display( SUBSET =>  COURSES => COURSE => OFFERING =>)
+# - COURSES is the array of all we're doing
+# - SUBSET COURSE and OFFERING are the specific one we're working on now
 
 sub Display {
     my $self = shift;
+    my %args = @_;
+
+    $self->{VALUES} = \%args;
+
+#print "**** VALUES \n";
+#print Dumper( $self->{VALUES} );
+#die;
     my $string;
 
     return $self->DisplayError() 
         if ( ! defined $self->{MODEL} || $self->{MODEL}->Errors );
 
-    return $self->DumpErrors()
-        if ( ! $self->GetHTMLTemplate( 
-                 "$self->{DIRECTORY}/$self->{VIEW}.$self->{FAMILY}" ) );
+    if ( ! $self->GetHTMLTemplate( 
+                 "$self->{DIRECTORY}/$self->{VIEW}.$self->{FAMILY}" ) ) {
+        print $self->DumpErrors();
+        die; 
+    }
 
+    #-- point to the right subset of data
+    $self->{DATA} = $self->{MODEL}->getSubset( $self->{VALUES}->{SUBSET} ) || [];
+
+
+    my $count = @{$self->{DATA}} ;
+
+    #   hard code to all students for now
+#    $self->{DATA} = $self->{MODEL}->{BY_ROLE}->[0];
+
+    #---- generate the view
     #--- this is where we get the plot.ly data
-    my $js = $self->plotly();
-
-    $self->{TEMPLATE}->param( "PLOTLY" => $js ); 
+    if ( $count != 0 ) {
+        my $js = $self->plotly();
+        $self->{TEMPLATE}->param( "PLOTLY" => $js ); 
+    }
 
     #-- now set up the rest of the page
+ 
+    # Analytic name is title for the page
+    # - course, offering, subset
+    my $analyticName = $self->{VALUES}->{COURSE} . " " .
+                       $self->{VALUES}->{OFFERING} . " " .
+                       $self->{VALUES}->{SUBSET};
+    $self->{TEMPLATE}->param( ANALYTIC_NAME => $analyticName );
 
-    #-- set the parameters for standard stuff
-    foreach my $field ( qw/ COURSE_NAME STUDENT_NAME COORDINATORS / ) {
-        $self->{TEMPLATE}->param( $field => $self->{MODEL}->{$field} );
-    }
+    #-- set up the nav menus at top of page
+    # - entire site structure
+    $self->{TEMPLATE}->param( COURSES => $self->{COURSES} );
+    # - menu for the offering - basically the subsets
+    my $subsets = $self->constructSubsetsView();
+    $self->{TEMPLATE}->param( SUBSETS => $subsets );
 
     return $self->{TEMPLATE}->output();
 }
@@ -116,21 +146,32 @@ sub plotly( ) {
 
     my $plotlyJS = "<script> var data = [ ";
 
-    my $students = $self->{MODEL}->{BY_ROLE}->[0];
+    my $students = $self->{DATA};
     #-- sort the clicks
     my @data = sort { $b->{quantity} <=> $a->{quantity} } @{$students} ;
 
     my @grades;
+#print Dumper( $students );
+#die;
 
     #-- great grade array with list of clicks for each grade
     foreach my $grade ( qw/ HD A B C F / )  {
         #-- get the students with these grades
         my @array = grep { $_->{EXTRAS}->{grade} eq $grade } @{$students};
-        @array = map { $_->{quantity} } @array;
-        my $clicks = join ",", @array;
+        #-- get the hover text
+#**** NOT REALLY WORKING FOR NOW
+        #   - gpa, plan, mode
+#        my @hoverText = map { "\"$_->{EXTRAS}->{mode} $_->{EXTRAS}->{plan} $_->{EXTRAS}->{gpa}\"" } @{$students};
+
+        #-- just get the clicks
+        my @clicks = map { $_->{quantity} } @array;
+        my $clicks = join ",", @clicks;
+#        my $hoverText = join ",", @hoverText;
+
     #    $gradeClicks{$grade}  = \@array;
 
         push @grades, { grade => $grade,
+#                        hover => $hoverText,
                         clicks => $clicks };
     }
 
@@ -143,6 +184,48 @@ sub plotly( ) {
 
 
     $self->{TEMPLATE}->param( grades => \@grades );
+}
+
+#-----------------------------------------------------------------
+# constructSubsetsView
+# - create an array of hashes
+#       { LINK => NAME => }
+#   for each of the subset views available for the current analytics
+# - need to know
+#   - what is the current analytic $self->{VIEWS}->{SUBSET}
+#           $self->{VIEWS}->{COURSE} $self->{VIEWS}->{OFFERING}
+#   - what are the possible subsets we're constructing
+#       @{$self->{VIEWS}->{COURSES}->{$course}->{$offering}}
+#   - what is the link for each of those subsets
+#     - $PATH/COURSE/OFFERING/ANALYTIC/subset.html
+
+sub constructSubsetsView() {
+    my $self = shift;
+
+    my $course = $self->{VALUES}->{COURSE};
+    my $offering = $self->{VALUES}->{OFFERING};
+    my $subset = $self->{VALUES}->{SUBSET};
+    my $analytic = ref $self->{MODEL};
+    $analytic =~ s/^.*:://;
+
+#print Dumper( $self->{VALUES}->{COURSES}->{$course}->{$offering}->{$analytic} );
+#die;
+
+    my @subsets;
+
+    foreach my $subset ( @{$self->{VALUES}->{COURSES}->{$course}->{$offering}->{$analytic}} ) {
+        my $label = $subset;
+        $label =~ s/_/ /g;
+        my $element = { LABEL => $label  };
+
+        my $link = $subset;
+        $link = "index" if ( $link eq "all" ) ;
+        $element->{LINK} = $self->{PATH} . 
+                            "/$course/$offering/$analytic/$link.html";
+        push @subsets, $element;
+    }
+    
+    return \@subsets;
 }
 
 

@@ -1,10 +1,16 @@
 #
-# FILE:     rossiHits.pl
-# PURPOSE:  Add into qilt_quantities rows of the format
+# FILE:     postReplies.pl
+# PURPOSE:  Add into qilt_quantities the quantities
 #
-#   user, 0 | 1, course, term, year, USER DHITS, #
-#   - USER DHITS is # of clicks on discussion forums (and perhaps others)
-#   - can use TOTAL CLICKS to get overal percentage
+#   POSTS - # posts made by a user
+#   REPLIES - # replies made by a user
+#   LEARNER REPLIES - # replies made by user to a learner post/reply
+#   TEACHER REPLIES - # replies made by a user to a teacher reply
+#
+#      ROLE == teacher, count TEACHER REPLIES to get TEACHER TEACHER
+#      ROLE == teacher, count LEARNER REPLIES TO add to LEARNER TEACHER
+#      ROLE == leaner, count LEARNER REPLIES to add to LEARNER LEARNER
+#      ROLE == learner, count TEACHER REPLIES to add to LEARNER LEARNER
 #   
 #   
 
