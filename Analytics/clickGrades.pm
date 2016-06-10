@@ -92,7 +92,9 @@ sub HandleParams {
     @{$self->{REQUIRED_PARAMETERS}} = @REQUIRED_PARAMETERS;
     $self->{CONFIG} = $args{CONFIG} || $CONFIG;
 
-    $args{q_type} = "TOTAL CLICKS" if ( ! exists $args{q_type} ) ;
+    if ( ! exists $args{q_type} )  {
+        $args{q_type} = "TOTAL CLICKS"; 
+    }
 
     #-- convert OFFERING into elements
     if ( exists $args{OFFERING} ) {
@@ -183,6 +185,21 @@ sub getSubset( $ ) {
         return \@data;
     }
     return undef;
+}
+
+#-----------------------------------------------------------------
+# getSubsetQuantityStats( $subset )
+# - given an array of entries (subset)
+# - for the subset
+
+sub getSubsetQuantStats() {
+    my $self = shift;
+    my $subset = shift;
+
+    my $stats = Statistics::Descriptive::Full->new();
+    $stats->add_data( map { $_->{quantity} } @$subset );
+
+    return $stats;
 }
 
 
