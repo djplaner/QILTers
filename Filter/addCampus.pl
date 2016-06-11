@@ -32,7 +32,7 @@ my $USERID_GROUPNAME = {
                   "( name like 'On-Campus%' or name like 'Online%' ) "
 };
 
-my @OFFERINGS = (  qw/ EDS4250_2015_2 EDS4250_2015_2 EDC1400_2015_1
+my @OFFERINGS = (  qw/ EDP4130_2015_1 EDS4250_2015_2 EDS4250_2015_2 EDC1400_2015_1
      EDC1400_2015_2 EDS2401_2015_2 EDS2401_2015_1 EDX3160_2015_2
    EDX3270_2015_1 EDX3270_2015_2 EDC4000_2015_2 EDC4000_2015_1 /
  );
@@ -139,7 +139,9 @@ sub addGroups( $$ ) {
         if ( exists $userGroup{$row->{userid}} ) {
             my $name = $userGroup{$row->{userid}}->{name};
 
-            if ( $name =~ /^On-Campus - (.*)$/ ) {
+            if ( $name =~ /^On-Campus - (.*) - T.*$/ ) {
+                $row->{mode} = $1;
+            } elsif ( $name =~ /^On-Campus - (.*)$/ ) {
                 $row->{mode} = $1;
             } elsif ( $name eq "Online" ) {
                 $row->{mode} = $name;
