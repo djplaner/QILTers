@@ -28,74 +28,86 @@ my %COURSES = (
         },
         "2015_2" => {
             clickGrades => [ qw/ all  / ],
-            dhits => [ qw/ all staff  / ]
+            dhits => [ qw/ all staff  / ],
+            dhitsGrades => [ qw/ all staff  / ]
         }
     },
-
     EDS4250 => {
         "2015_1" => {
             clickGrades => [ qw/ all / ],
-            dhits => [ qw/ all staff / ]
+            dhits => [ qw/ all staff / ],
+            dhitsGrades => [ qw/ all staff  / ]
         },
         "2015_2" => {
             clickGrades => [ qw/ all Online Toowoomba/ ],
-            dhits => [ qw/ all staff Online Toowoomba/ ]
+            dhits => [ qw/ all staff Online Toowoomba/ ],
+            dhitsGrades => [ qw/ all staff Online Toowoomba/ ]
         },
     },
     #-- the empty ones for now
     EDS2401 => {
         "2015_1" => {
             clickGrades => [ qw/ all Fraser_Coast Online Springfield Toowoomba / ],
-            dhits => [ qw/ all staff Fraser_Coast Online Springfield Toowoomba / ]
+            dhits => [ qw/ all staff Fraser_Coast Online Springfield Toowoomba / ],
+            dhitsGrades => [ qw/ all staff Fraser_Coast Online Springfield Toowoomba / ]
         },
         "2015_2" => {
             clickGrades => [ qw/ all / ],
-            dhits => [ qw/ all staff / ]
+            dhits => [ qw/ all staff / ],
+            dhitsGrades => [ qw/ all staff / ]
         },
     },    
     EDX3270 => {
         "2015_1" => {
             clickGrades => [ qw/ all Fraser_Coast ONline Springfield Toowoomba / ],
-            dhits => [ qw/ all staff Fraser_Coast ONline Springfield Toowoomba/ ]
+            dhits => [ qw/ all staff Fraser_Coast ONline Springfield Toowoomba/ ],
+            dhitsGrades => [ qw/ all staff Fraser_Coast ONline Springfield Toowoomba/ ],
         },
         "2015_2" => {
             clickGrades => [ qw/ all / ],
-            dhits => [ qw/ all staff / ]
+            dhits => [ qw/ all staff / ],
+            dhitsGrades => [ qw/ all staff / ],
         },
     },
     EDX3160 => {
         "2015_2" => {
             clickGrades => [ qw/ all Fraser_Coast Online Springfield Toowoomba / ],
-            dhits => [ qw/ all staff Fraser_Coast Online Springfield Toowoomba / ]
+            dhits => [ qw/ all staff Fraser_Coast Online Springfield Toowoomba / ],
+            dhitsGrades => [ qw/ all staff Fraser_Coast Online Springfield Toowoomba / ],
         },
     },
     EDC4000 => {
         "2015_1" => {
             clickGrades => [ qw/ all Online Springfield Toowoomba / ],
-            dhits => [ qw/ all staff Online Springfield Toowoomba / ]
+            dhits => [ qw/ all staff Online Springfield Toowoomba / ],
+            dhitsGrades => [ qw/ all staff Online Springfield Toowoomba / ],
         },
         "2015_2" => {
             clickGrades => [ qw/ all Online Springfield Toowoomba / ],
-            dhits => [ qw/ all staff Online Springfield Toowoomba / ]
+            dhits => [ qw/ all staff Online Springfield Toowoomba / ],
+            dhitsGrades => [ qw/ all staff Online Springfield Toowoomba / ],
         },
     },
     EDC1400 => {
         "2015_1" => {
             clickGrades => [ qw/ all Fraser_Coast Online Springfield Toowoomba / ],
-            dhits => [ qw/ all staff  Online Springfield Toowoomba / ]
+            dhits => [ qw/ all staff  Online Springfield Toowoomba / ],
+            dhitsGrades => [ qw/ all staff  Online Springfield Toowoomba / ],
         },
         "2015_2" => {
             clickGrades => [ qw/ all  Online Springfield Toowoomba / ],
-            dhits => [ qw/ all staff  Online Springfield Toowoomba / ]
+            dhits => [ qw/ all staff  Online Springfield Toowoomba / ],
+            dhitsGrades => [ qw/ all staff  Online Springfield Toowoomba / ],
         },
     },
     EDP4130 => {
         "2015_1" => {
             dhits => [ qw/ all staff Fraser_Coast Online Springfield Toowoomba/ ] ,
+            dhitsGrades => [ qw/ all staff Fraser_Coast Online Springfield Toowoomba/ ] ,
             clickGrades => [ qw/ all Fraser_Coast Online Springfield Toowoomba/ ] 
         }
     },
-);
+); 
 
 my $DOCUMENT_ROOT = "/Applications/mappstack-5.4.36-0/apache2/htdocs/qilters";
 my $PATH = "/qilters";
@@ -119,10 +131,12 @@ print "****** SUBSET is $subset\n";
 #print Dumper( $model->{DATA} );
                 #-- might need to provide "template" file of other information here
                 my $view = $factory->getView( MODEL => $model, 
+                        VIEW => $analytic,
                         COURSES => \%COURSES, PATH => $PATH );
-print "VIEW is " . ref( $view ) . "\n";
+print "          VIEW is " . ref( $view ) . "\n";
                 my $string = $view->Display( SUBSET => $subset,
                             COURSE => $course, OFFERING => $offering,
+                                ANALYTIC => $analytic,
                                          COURSES => \%COURSES );
 #print $string;
 #die;
