@@ -156,13 +156,16 @@ sub plotly( ) {
 
     my $totalClicks = $contentStats->sum();
     my $forumClicks = $forumStats->sum();
+    my $contentClicks = $totalClicks - $forumClicks;
+    my $contentPerStudent = sprintf "%3.1f", $contentClicks / $contentStats->count();
+    my $forumPerStudent = sprintf "%3.1f", $forumClicks / $contentStats->count();
 
     my $percent = 100 / $totalClicks;
-    my $contentPercent = sprintf "%3.1f", ( $totalClicks - $forumClicks ) * $percent;
+    my $contentPercent = sprintf "%3.1f", $contentClicks * $percent;
     my $forumPercent = sprintf "%3.1f", $forumClicks * $percent;
 
     my $clicks = "$contentPercent, $forumPercent";
-    my $clicksLabels = "\"Content\", \"Forum\"";
+    my $clicksLabels = "\"Content (n=$contentClicks, c/p=$contentPerStudent)\", \"Forum (n=$forumClicks c/p=$forumPerStudent)\"";
 
     $self->{TEMPLATE}->param( clicks => $clicks );
     $self->{TEMPLATE}->param( clicksLabels => $clicksLabels );

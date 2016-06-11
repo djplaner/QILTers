@@ -168,6 +168,8 @@ sub setUpRoleData() {
 # @{$students} = getSubset( $subset )
 # - return a subset of data from this model based on the $subset
 # - all - all students
+# - Online, Springfield, Toowoomba, Fraser Coast - enrolments in extras
+# - staff - all staff
 # 
 
 sub getSubset( $ ) {
@@ -177,6 +179,8 @@ sub getSubset( $ ) {
     #-- all is just all students
     if ( $subset eq "all" ) {
         return $self->{BY_ROLE}->[0];
+    } elsif ( $subset eq "staff" ) {
+        return $self->{BY_ROLE}->[1];
     } elsif ( $subset eq "Online" || $subset eq "Toowoomba" ||
               $subset eq "Springfield" || $subset eq "Fraser Coast" ) {
         my @data = grep { $_->{EXTRAS}->{mode} eq $subset }
