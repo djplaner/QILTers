@@ -1,0 +1,72 @@
+
+<TMPL_INCLUDE NAME="header.html">
+
+<TMPL_IF NAME="forumClicks">
+<script type="text/javascript" src="/qilters/plotly-latest.min.js"></script>
+
+<div id="myDiv" style="margin:auto; width:500px"></div>
+
+<script>
+    var forum = {
+        x: [ <TMPL_VAR NAME="forumClicks"> ],
+        y: [ <TMPL_VAR NAME="yLabels"> ],
+        name: 'forum clicks',
+        orientation : 'h',
+        marker: {
+            color: 'rgba(55,128,191,0.6)',
+            width: 1
+        },
+        type: 'bar'
+    };
+
+    var content = {
+        x: [ <TMPL_VAR NAME="contentClicks"> ],
+        y: [ <TMPL_VAR NAME="yLabels"> ],
+        name: 'content clicks',
+        orientation : 'h',
+        marker: {
+            color: 'rgba(255,154,51,0.6)',
+            width: 1
+        },
+        type: 'bar'
+    };
+
+    var data = [ forum, content ];
+
+    var layout = {
+        title : "<TMPL_VAR NAME="ANALYTIC_NAME">",
+        barmode: 'stack',
+        height: <TMPL_VAR NAME="HEIGHT">,
+        width: 800
+    };
+
+    Plotly.newPlot('myDiv', data, layout );
+</script>
+
+<nav id="subMenu">
+  <ul id="courseMenu">
+  <TMPL_LOOP NAME="SUBSETS">
+    <li>
+        <a href="<TMPL_VAR NAME="LINK">"><TMPL_VAR NAME="LABEL"></a>
+    </li>
+  </TMPL_LOOP>
+  </ul>
+</nav>
+
+
+  <div style="margin:auto; width:60%">
+    <h3>Explanation</h3>
+
+    <p>Shows total number of content and forum clicks by each student. If you hold the mouse over a particular bar, you can see the raw number of clicks.</p>
+    <p> The list of students is ordered (along the Y axis) by their mark/grade in the course. The highest performing students are at the top of the Y axis, lowest performing at the bottom.</p>
+  </div>
+
+
+<TMPL_ELSE>
+  <div style="margin:auto; width:60%">
+    <h1>No matching data</h1>
+    <p>The chosen combination of factors doesn't appear to have any matching data.</p>
+  </div>
+</TMPL_IF>
+
+<TMPL_INCLUDE NAME="footer.html">

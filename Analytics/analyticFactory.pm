@@ -14,7 +14,8 @@ use Data::Dumper;
 
 my %ANALYTIC_TRANSLATE = (
     clickGrades => "clicks/grade",
-    dhits => "content/forum %"
+    dhits => "content/forum %",
+    dhitsGrades => "content/forum/grade"
 );
 
 sub new {
@@ -36,6 +37,8 @@ sub getModel() {
     my %args = @_;
 
     my $analytic = $args{ANALYTIC};
+    #-- dhitsGrades uses the dhits model
+    $analytic = "dhits" if ( $analytic eq "dhitsGrades" );
 
     #-- maybe do some smart work here eventually
 
@@ -66,18 +69,17 @@ sub getView( $) {
     my $offerings = $args{COURSES};
     my $path = $args{PATH};
 
-    my $analytic = ref( $model ) . "_View";
-    my $class_path = $analytic;
+    my $view = "QILTers::Analytics::" . $args{VIEW} . "_View";
+    my $class_path = $view;
     $class_path =~ s#::#/#g ;
     #-- maybe do some smart work here eventually
-
     #-- Create the model and the view
     eval{ require "webfuse/lib/${class_path}.pm" } ;
 
     if ( $@ !~ /^$/ ) {
-        die "No object file for $analytic: $@" ;
+        die "No object file for $view: $@" ;
     } else {
-        my $class = $analytic->new( MODEL => $model );
+        my $class = $view->new( MODEL => $model );
 
         $class->{PATH} = $path;
         $class->{COURSES} = $self->constructViewOfferings( $offerings, $path );
@@ -162,6 +164,10 @@ sub constructViewOfferings( $ ) {
                     my $subset = $offerings->{$course}->{$offering}->{$analytic}->[0] . ".html";
 
                     $subset = "index.html" if ( $subset eq "all.html" );
+
+                    if ( ! exists $ANALYTIC_TRANSLATE{$analytic} ) {
+                        die "Can't find translation for $analytic\n";
+                    }
                     push @analytics, {
                         LABEL => $ANALYTIC_TRANSLATE{$analytic},
                         LINK => "$path/$course/$offering/$analytic/$subset"
