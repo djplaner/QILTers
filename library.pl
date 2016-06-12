@@ -7,10 +7,38 @@ my $WEBFUSE_HOME=$WebfuseConfig::WEBFUSE_HOME;
 my $DATA_DIR="$WebfuseConfig::WEBFUSE_DATA/databases";
 my $CONFIG = "$DATA_DIR/StudyDesk2015.txt";
 
+my $COURSE_ROLES_DEFAULTS = {
+    TABLE => "qilt_quantities",
+    FIELDS => "userid,roleid",
+    CONDITIONS => "course={course} and year={year} and term={term}"
+};
+
+my $COURSE_FORUMS_DEFAULTS = {
+    TABLE => "moodle.mdl_forum",
+    FIELDS => "id,type,name",
+    CONDITIONS => "course={course}",
+    CACHE => { namespace => "QILT", default_expires_in => "7 days" }
+};
+
+my $COURSE_FORUMS_DISCUSSIONS_DEFAULTS = {
+    TABLE => "moodle.mdl_forum_discussions",
+    FIELDS => "id,name,userid",
+    CONDITIONS => "course={course} and forum={forum}",
+    CACHE => { namespace => "QILT", default_expires_in => "7 days" }
+};
+
+my $COURSE_DISCUSSIONS_POSTS_DEFAULTS = {
+    TABLE => "moodle.mdl_forum_posts",
+    FIELDS => "id,parent,userid,created,modified",
+    CONDITIONS => "discussion={discussion}",
+    CACHE => { namespace => "QILT", default_expires_in => "7 days" }
+};
+
 my $COURSE_DISCUSSIONS_DEFAULTS = {
     TABLE => "moodle.mdl_forum_discussions",
     FIELDS => "id",
-    CONDITIONS => "course={course}"
+    CONDITIONS => "course={course}",
+    CACHE => { namespace => "QILT", default_expires_in => "7 days" }
 };
 
 my $USER_COURSE_POSTS_DEFAULTS = {
@@ -569,3 +597,99 @@ sub identifyCourseAge( $ ) {
     return "NEW";
 }
 
+#-----------------------------------------------------------------
+# getAllForums( $courseid )
+# - given a course id, return model with all forum ids
+
+sub getAllForums( $ ) {  
+    my $courseId = shift;
+
+    #-- get the discussion ids first
+    my $forums = NewModel->new( %$COURSE_FORUMS_DEFAULTS, 
+                        CONFIG => $CONFIG, 
+                        KEYS => { course => $courseId } );
+
+    if ( $forums->Errors() ) {
+        print "*** ERROR getting forums\n";
+        print $forums->DumpErrors();
+        die;
+    }
+
+    return $forums;
+}
+
+#-----------------------------------------------------------------
+# getAllForumsDiscussions( $courseid, $forum )
+# - given a course id, and forum return model with all forum ids
+
+sub getAllForumsDiscussions( $ ) {  
+    my $courseId = shift;
+    my $forum = shift;
+
+    #-- get the discussion ids first
+    my $discussions = NewModel->new( %$COURSE_FORUMS_DISCUSSIONS_DEFAULTS, 
+                        CONFIG => $CONFIG, 
+                        KEYS => { course => $courseId, forum => $forum } );
+
+    if ( $discussions->Errors() ) {
+        print "*** ERROR getting discussions\n";
+        print $discussions->DumpErrors();
+        die;
+    }
+
+    return $discussions;
+}
+
+
+my $COURSE_DISCUSSIONS_POSTS_DEFAULTS = {
+    TABLE => "moodle.mdl_forum_posts",
+    FIELDS => "id,parent,userid,created,modified",
+    CONDITIONS => "discussion={discussion}"
+};
+
+#-----------------------------------------------------------------
+# getAllDiscussionPosts( $discussion)
+# - given a discussionid, get all the posts
+
+sub getAllDiscussionPosts( $ ) {  
+    my $discussion = shift;
+
+    #-- get the discussion ids first
+    my $posts = NewModel->new( %$COURSE_DISCUSSIONS_POSTS_DEFAULTS, 
+                        CONFIG => $CONFIG, 
+                        KEYS => { discussion => $discussion } );
+
+    if ( $posts->Errors() ) {
+        print "*** ERROR getting posts\n";
+        print $posts->DumpErrors();
+        die;
+    }
+
+    return $posts;
+}
+
+#-----------------------------------------------------------------
+# getAllCourseRoles( course => term => year =>)
+# - given a specific offering, construct a hash keyed on userid
+#   that gives the users role STUDENT TEACHER
+
+sub getAllCourseRoles( $ ) {  
+    my %offering = @_;
+
+    #-- get the discussion ids first
+    my $roles = NewModel->new( %$COURSE_ROLES_DEFAULTS, 
+                        CONFIG => $CONFIG, 
+                        KEYS => \%offering );
+
+    if ( $roles->Errors() ) {
+        print "*** ERROR getting roles\n";
+        print $roles->DumpErrors();
+        die;
+    }
+
+    my @roles = ( qw/ STUDENT TEACHER / );
+    my %roles = map { ( $_->{userid} => @roles[$_->{roleid}] ) } 
+                @{$roles->{DATA}};
+
+    return \%roles;
+}
