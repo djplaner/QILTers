@@ -1,6 +1,6 @@
 #
-# FILE:     dhitsGrades.pl
-# PURPOSE:  Simple test app for Analytics::dhitsGrades.pm
+# FILE:     postsNetwork.pl
+# PURPOSE:  Simple test app for Analytics::postsNetwork.pm
 #
 
 BEGIN
@@ -11,30 +11,16 @@ BEGIN
 use strict;
 use Data::Dumper;
 
-use webfuse::lib::QILTers::Analytics::dhits;
-use webfuse::lib::QILTers::Analytics::dhitsGrades_View;
+use webfuse::lib::QILTers::Analytics::postsNetwork;
+use webfuse::lib::QILTers::Analytics::postsNetwork_View;
 
 
-my $model = QILTers::Analytics::dhits->new( OFFERING => "EDP4130_2015_1" );
-print Dumper( $model );
-#foreach my $set ( qw/ all / ) {
-
-#    my $subset = $model->getSubset( $set );
-#    my $all = $model->getSubsetQuantStats( $subset );
-
-#    next if ( $all->count() == 0 );
-#print "**** SET $set\n";
-#foreach my $field ( qw/ count sum mean min max standard_deviation / ) {
-#    print "-- $field " . $all->$field() . "\n";
-#}
-#}
+my $model = QILTers::Analytics::postsNetwork->new( OFFERING => "EDC3100_2015_2" );
+#print Dumper( $model );
 #die;
-
-#print Dumper( $model->{TOTAL_DHITS} );
-
-my $view  = QILTers::Analytics::dhitsGrades_View->new( MODEL => $model );
+my $view  = QILTers::Analytics::postsNetwork_View->new( MODEL => $model );
 my $string = $view->Display( 
-                COURSE => "EDP4130", OFFERING => "2015_1",
+                COURSE => "EDC3100", OFFERING => "2015_2",
                             SUBSET => "all" );
 
 print $string;

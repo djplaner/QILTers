@@ -87,9 +87,20 @@ sub HandleParams {
     my $self = shift;
     my %args = @_;
 
+#print Dumper( \%args );
+#die;
     #-- setup the defaults
-    %{$self->{DEFAULTS}} = %$QILT_Q_DEFAULTS;
-    @{$self->{REQUIRED_PARAMETERS}} = @REQUIRED_PARAMETERS;
+    if ( exists $args{DEFAULTS} ) {
+        %{$self->{DEFAULTS}} = %{$args{DEFAULTS}};
+    } else {
+        %{$self->{DEFAULTS}} = %$QILT_Q_DEFAULTS;
+    }
+
+    if ( exists $args{REQUIRED_PARAMETERS} ) {
+        @{$self->{REQUIRED_PARAMETERS}} = @{$args{REQUIRED_PARAMETERS}};
+    } else {
+        @{$self->{REQUIRED_PARAMETERS}} = @REQUIRED_PARAMETERS;
+    }
     $self->{CONFIG} = $args{CONFIG} || $CONFIG;
 
     if ( ! exists $args{q_type} )  {

@@ -29,7 +29,8 @@ my %COURSES = (
         "2015_2" => {
             clickGrades => [ qw/ all  / ],
             dhits => [ qw/ all staff  / ],
-            dhitsGrades => [ qw/ all staff  / ]
+            dhitsGrades => [ qw/ all staff  / ],
+            postsNetwork => [ qw/ all / ]
         }
     },
     EDS4250 => {

@@ -1,21 +1,11 @@
 #
-# FILE:		QILTers::Analytics::clickGrades.pm
-# PURPOSE:	Model to map clickGrades (and various filters) for a given course
-#
-#   $model = $$->new( OFFERING => "EDC3100_2015_1", Q_TYPE =>  );
-#   - gather user demographic data for that offering
-#     - includes grades 
-#   - gather total clicks
-#     - include role
-#
-#   - merge all this into a single array hash
-#   - allow calling scripts to chop and change
-#
+# FILE:		QILTers::Analytics::postsNetwork.pm
+# PURPOSE:	Model to map postsNetwork (and various filters) for a given course
 #
 # TO DO:	
 #
 
-package QILTers::Analytics::clickGrades;
+package QILTers::Analytics::postsNetwork;
 
 $VERSION = '0.5';
 
@@ -24,8 +14,9 @@ use strict;
 use Data::Dumper;
 
 use webfuse::lib::NewModel;
+use webfuse::lib::QILTers::Analytics::clickGrades;
 
-@QILTers::Analytics::clickGrades::ISA = ( "NewModel" );
+@QILTers::Analytics::postsNetwork::ISA = ( "QILTers::Analytics::clickGrades" );
 
 #--------------------
 # Globals
@@ -38,20 +29,15 @@ my $CONFIG = "$DATA_DIR/StudyDesk2015.txt";
 # CONDITIONS is constructed in handle_params based on parameters
 # passed in
 
-my $QILT_Q_DEFAULTS = {
-    TABLE => "qilt_quantities",
-    FIELDS => "userid,roleid,course,term,year,q_type,quantity",
-    CONDITIONS => "course={course} and term={term} and year={year} and " .
-                  "q_type={q_type}"
-};
-
-my $EXTRAS_DEFAULTS = {
-    TABLE => "mdl_user_extras",
-    FIELDS => "userid,course,term,year,mark,grade,gpa,program,plan,birthdate,mode,postal_code,completed_units,transferred_units,acad_load",
+my $POSTS_REPLIES_DEFAULTS = {
+    TABLE => "posts_replies",
+    FIELDS => "course,year,term,forumid,discussionid," .
+              "postid,postAuthorid,postAuthorRole,postTimeCreated," .
+              "parentid,parentAuthorid,parentAuthorRole,parentTimeCreated",
     CONDITIONS => "course={course} and term={term} and year={year}"
 };
 
-my @REQUIRED_PARAMETERS = ( qw/ OFFERING course term year q_type / );
+my @REQUIRED_PARAMETERS = ( qw/ OFFERING course term year / );
 
 
 #-------------------------------------------------------------
@@ -64,148 +50,109 @@ sub new {
     
     my %args = @_;
 
+    $args{q_type} = "POSTS NETWORK";
     bless( $self, $class );
 
-    #-- start with QILT quantities data as this one will be more inclusive
-    # - teaching staff may not have anything in mdl_user_extras
-    return $self if ( ! $self->HandleParams( %args ) );
+    $self = $self->SUPER::new( %args, DEFAULTS => $POSTS_REPLIES_DEFAULTS,
+                               REQUIRED_PARAMETERS => \@REQUIRED_PARAMETERS  );
 
-    #-- get the mdl_user_extras ******
-    $self->addUserExtras();
- 
-    #-- set up different sub-arrays based on roleid
-    $self->setUpRoleData();
+    $self->{CLICKS_GRADES} = QILTers::Analytics::clickGrades->new(
+                                OFFERING => $args{OFFERING} );
 
+    #-- generate the network model for all participants
+    $self->{NETWORK_ALL} = $self->generateNetworkModel( $self->{DATA} );
     return $self;
 }
 
-#---------------------------------------------------------------------------
-# HandleParams
-# - check the parameters passed in
+#-------------------------------------------------------------
+# generateNetworkModel( $subset )
+# - take the data of array of hashes - perhaps a subset
+# - return a hash with two entries
+#   NODES
+#   - id - unique id for each user
+#   - role - either "student" or "teacher" 
+#   - userid - the userid
+#   EDGES
+#    - id - new unique id - combo of two nodes connected
+#    - source - source node id
+#    - target - target node id
+#    - weight - integer representing # of replies
 
-sub HandleParams {
+sub generateNetworkModel($) {
     my $self = shift;
-    my %args = @_;
+    my $posts = shift;
 
-    #-- setup the defaults
-    %{$self->{DEFAULTS}} = %$QILT_Q_DEFAULTS;
-    @{$self->{REQUIRED_PARAMETERS}} = @REQUIRED_PARAMETERS;
-    $self->{CONFIG} = $args{CONFIG} || $CONFIG;
+    my @role = ( qw/ student teacher / );
+    my %array; my @nodes;  my @edges;
 
-    if ( ! exists $args{q_type} )  {
-        $args{q_type} = "TOTAL CLICKS"; 
+    #-- nodes will be all entries from
+    my $count = 1;
+    foreach my $user ( @{$self->{CLICKS_GRADES}->{DATA}} ) { 
+        my $node = {
+            id => $count, 
+            role => $role[$user->{roleid}],
+            userid => $user->{userid}
+        };
+        $count++;
+        push @nodes, $node;
     }
 
-    #-- convert OFFERING into elements
-    if ( exists $args{OFFERING} ) {
-        my @offerings = split /_/, $args{OFFERING};
-        $args{course} = $offerings[0];
-        $args{year} = $offerings[1];
-        $args{term} = $offerings[2];
+    #-- create a hash connecting userid to an entry in @nodes
+    # - used in edges
+    my %userNodeHash = map { ( $_->{userid} => $_ ) } @nodes;
+#print Dumper( \%userNodeHash );
+#die;
 
-        $self->{OFFERING}->{course} = $offerings[0];
-        $self->{OFFERING}->{year} = $offerings[1];
-        $self->{OFFERING}->{term} = $offerings[2];
+    #-- create edges
+    # - loop through all entries in posts replies
+    # - if parent is defined the create an edge
+    # - source is current post, target is parent
+#print Dumper( $self->{DATA} );
+#die;
+    foreach my $post ( @{$self->{DATA}} ) {
+        if ( $post->{parentid} ne "" ) {
+            #-- increase the weight of edge between user and parent
+            $userNodeHash{$post->{postauthorid}}->{REPLIES}->{$post->{parentauthorid}}->{WEIGHT}++;
+        }
     }
- 
-    return $self->SUPER::HandleParams( %args );
+#print Dumper( \%userNodeHash );
+#die;
+    #-- transform usernodehash data into 
+#   EDGES - array of hashes
+#    - id - new unique id - combo of two nodes connected
+#    - source - source node id
+#    - target - target node id
+
+    #-- loop through each  NODE (user)
+    foreach my $node ( @nodes ) {
+        #-- loop through each REPLIES they have made
+        # - $reply here is a userid they have replied to (target)
+        foreach my $reply ( keys %{$node->{REPLIES}} ){
+            my $source = $node->{id};
+            my $target = $userNodeHash{$reply}->{id};
+            if ( exists $userNodeHash{$reply}->{id} ) {
+                my $edgeId = $source . "_" . $target;
+                my $entry = {
+                            id => $edgeId,
+                            source => $source,
+                            target => $target,
+                            weight => $node->{REPLIES}->{$reply}->{WEIGHT}
+                };
+                push @edges, $entry;
+            } else {
+            #    print Dumper( $node );
+            #    print Dumper( $node->{REPLIES}->{$reply} );
+            #    die;
+            }
+        }
+    }
+#print Dumper( \@edges );
+#die;
+    
+    $array{NODES} = \@nodes;
+    $array{EDGES} = \@edges;
+    return \%array;
 }
-
-
-#---------------------------------------------------------------------------
-# addUserExtras
-# - add into DATA an entry EXTRAS with data mdl_user_extras table
-#   where available (not for staff)
-
-sub addUserExtras() {
-    my $self = shift;
-
-    my $keys = $self->{OFFERING};
-
-    my $q  = NewModel->new( CONFIG => $CONFIG,
-                DEFAULTS => $EXTRAS_DEFAULTS,
-                KEYS => $keys );
-
-    if ( $q->Errors() ) {
-        $q->DumpErrors();
-        die;
-    }
-    if ( $q->NumberOfRows() == 0 ) {
-        print "No user extras data found\n";
-        print Dumper( $keys );
-        die;
-    }
-
-    #-- create a hash into $q->{DATA} based on userid
-    my %userId = map { ( $_->{userid} => $_ ) } @{$q->{DATA}};
-
-    #-- merge qilt data into $self->{DATA}
-    foreach my $row ( @{$self->{DATA}} ) {
-        $row->{EXTRAS} = $userId{ $row->{userid} };
-#        $row->{roleid} = $userId{ $row->{userid} }->{roleid};
-    }
-}
-
-#---------------------------------------------------------------------------
-# $self->setUpRoleData();
-# - create array BY_ROLE 
-# - each element contains an array of hashes based on roleid
-#   - 0 - student, 1 - teacher
-
-sub setUpRoleData() {
-    my $self = shift;
-
-    $self->{BY_ROLE} = [];
-
-    foreach my $role( qw/ 0 1 / ) {
-        #-- extract rows matching
-        @{$self->{BY_ROLE}->[$role]} = grep { $_->{roleid} == $role } 
-                                            @{$self->{DATA}};
-    }
-}
-
-#---------------------------------------------------------------------------
-# @{$students} = getSubset( $subset )
-# - return a subset of data from this model based on the $subset
-# - all - all students
-# - Online, Springfield, Toowoomba, Fraser Coast - enrolments in extras
-# - staff - all staff
-# 
-
-sub getSubset( $ ) {
-    my $self = shift;
-    my $subset = shift;
-
-    #-- all is just all students
-    if ( $subset eq "all" ) {
-        return $self->{BY_ROLE}->[0];
-    } elsif ( $subset eq "staff" ) {
-        return $self->{BY_ROLE}->[1];
-    } elsif ( $subset eq "Online" || $subset eq "Toowoomba" ||
-              $subset eq "Springfield" || $subset eq "Fraser Coast" ) {
-        my @data = grep { $_->{EXTRAS}->{mode} eq $subset }
-                         @{$self->{BY_ROLE}->[0]};
-
-        return \@data;
-    }
-    return undef;
-}
-
-#-----------------------------------------------------------------
-# getSubsetQuantityStats( $subset )
-# - given an array of entries (subset)
-# - for the subset
-
-sub getSubsetQuantStats() {
-    my $self = shift;
-    my $subset = shift;
-
-    my $stats = Statistics::Descriptive::Full->new();
-    $stats->add_data( map { $_->{quantity} } @$subset );
-
-    return $stats;
-}
-
 
 1;
 

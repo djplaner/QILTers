@@ -1,11 +1,11 @@
 #
-# FILE:		dhits_View.pm
+# FILE:		postsNetwork_View.pm
 # PURPOSE:	View class for QILTers::Analytics::dhits
 #                               
 # TO DO:	
 #
 
-package QILTers::Analytics::dhits_View;
+package QILTers::Analytics::postsNetwork_View;
 
 $VERSION = '0.5';
 
@@ -16,7 +16,7 @@ use HTML::Template;
 use Data::Dumper;
 use webfuse::lib::View;
 
-@QILTers::Analytics::dhits_View::ISA = ( qw/ View / );
+@QILTers::Analytics::postsNetwork_View::ISA = ( qw/ View / );
 
 use webfuse::lib::WebfuseConfig;
 my $WEBFUSE_HOME=$WebfuseConfig::WEBFUSE_HOME;
@@ -44,7 +44,7 @@ sub new
   $self->{MODEL} = $args{MODEL} || undef;
 
   $self->{FAMILY} = $args{FAMILY} || "default";
-  $self->{VIEW} = $args{VIEW} || "contentForumClicks";
+  $self->{VIEW} = $args{VIEW} || "postsNetwork";
   $self->{TYPE} = $args{TYPE} || "";
   $self->{TYPE} =~ s/^(.*)\/$//;
   $self->{DIRECTORY} = $args{DIRECTORY} || "$WEBFUSE_HOME/lib/QILTers/Analytics/Views";
@@ -69,11 +69,7 @@ sub new
 # - COURSES is the array of all we're doing
 # - SUBSET COURSE and OFFERING are the specific one we're working on now
 #
-#   -- need to get subset from both clickGrades and dHit
-#   -- then construct pie chart based on 
-#   -- TOTAL CLICKS - DHITS = content
-#      DHITS = interaction
-#   -- **** convert this to a %
+#
 
 sub Display {
     my $self = shift;
@@ -102,11 +98,8 @@ sub Display {
     #-- point to the right subset of data
     #   - for both dhits and clicks
 print "Getting $self->{VALUES}->{SUBSET}\n";
-    $self->{DHITS_DATA} = $self->{MODEL}->getSubset( $self->{VALUES}->{SUBSET} ) || [];
-    $self->{CLICKS_DATA} = $self->{MODEL}->{CLICK_GRADES}->getSubset( $self->{VALUES}->{SUBSET} ) || [];
 
-    my $count = @{$self->{DHITS_DATA}} ;
-print "COUNT is $count\n";
+    my $count = 1; #**** will need to be changed
     if ( $count != 0 ) {
         $self->plotly();
     }
@@ -115,7 +108,7 @@ print "COUNT is $count\n";
  
     # Analytic name is title for the page
     # - course, offering, subset
-    my $analyticName = "Content/Forum click % for " .
+    my $analyticName = "Reply network for " .
                         $self->{VALUES}->{COURSE} . " " .
                        $self->{VALUES}->{OFFERING} . " " .
                        $self->{VALUES}->{SUBSET};
@@ -136,39 +129,34 @@ print "COUNT is $count\n";
 # plotly()
 # - DHITS_DATA is all rows for matching subset for DHITS
 # - CLICKS_DATA is all rows for matching subset of ALL CLICKS
-# - Need to
-#   - add up all dhits_data
-#   - add up all clicks data
-#   - figure out the percentages
-#   - generate plotly javascript
-#   
-#  Construct string
-#       clicks which is comma separated list of % for clicks
-#       - content and then forum
-#       clicksLabels - Content, Forum 
+#
+# - Need to create two arrays of hashes
+#   - nodes 
+#     - elements: 
+#       - id - unique id ???? what ????
+#       - role - either "student" or "teacher"
+#     - edges:
+#       - id - new unique id - combo of two nodes connected
+#       - source - source node id
+#       - target - target node id
+#       - weight - integer representing # of replies
+#
+#  -- need an array of hashes from posts_replies
+#   - Model will provide posts_replies for all posts/replies
+#     - elements
+#       - sourceid, targetid, weight
+#  -- ids will be numbers - uniquly generated for each user
+#
+#   in MODEL->{NETWORK_ALL} by default
+#   *** will need to work out  subsets
 
 sub plotly( ) {
     my $self = shift;
 
-    #-- calcualte the percentages for contentClicks and forumClicks
-    my $contentStats= $self->{MODEL}->getSubsetQuantStats( $self->{CLICKS_DATA} );
-    my $forumStats = $self->{MODEL}->getSubsetQuantStats( $self->{DHITS_DATA} );;
+    my $subset = $self->{MODEL}->{NETWORK_ALL};
 
-    my $totalClicks = $contentStats->sum();
-    my $forumClicks = $forumStats->sum();
-    my $contentClicks = $totalClicks - $forumClicks;
-    my $contentPerStudent = sprintf "%3.1f", $contentClicks / $contentStats->count();
-    my $forumPerStudent = sprintf "%3.1f", $forumClicks / $contentStats->count();
-
-    my $percent = 100 / $totalClicks;
-    my $contentPercent = sprintf "%3.1f", $contentClicks * $percent;
-    my $forumPercent = sprintf "%3.1f", $forumClicks * $percent;
-
-    my $clicks = "$contentPercent, $forumPercent";
-    my $clicksLabels = "\"Content (n=$contentClicks, c/p=$contentPerStudent)\", \"Forum (n=$forumClicks c/p=$forumPerStudent)\"";
-
-    $self->{TEMPLATE}->param( clicks => $clicks );
-    $self->{TEMPLATE}->param( clicksLabels => $clicksLabels );
+    $self->{TEMPLATE}->param( nodes => $subset->{NODES},
+                        edges => $subset->{EDGES} );
 }
 
 #-----------------------------------------------------------------

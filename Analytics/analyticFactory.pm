@@ -15,7 +15,8 @@ use Data::Dumper;
 my %ANALYTIC_TRANSLATE = (
     clickGrades => "clicks/grade",
     dhits => "content/forum %",
-    dhitsGrades => "content/forum/grade"
+    dhitsGrades => "content/forum/grade",
+    postsNetwork => "forum post network"
 );
 
 sub new {

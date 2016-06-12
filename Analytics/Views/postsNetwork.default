@@ -1,32 +1,68 @@
 
 <TMPL_INCLUDE NAME="header.html">
 
-<TMPL_IF NAME="grades">
-<script type="text/javascript" src="/qilters/plotly-latest.min.js"></script>
+<TMPL_IF NAME="nodes">
+<script type="text/javascript" src="/qilters/cytoscape.js"></script>
 
-<div id="myDiv"></div>
+<style>
+  #cy { 
+        margin: auto;
+        border: 1px solid #ddd;
+                    height: 680px;
+                    width: 1000px;
+                    overflow: auto !important;
+       border-radius: 0.25em;
+    }
+</style>
+
+<div id="cy">
+</div>
 
 <script>
-    var data = [
-        <TMPL_LOOP NAME="grades">
-        {
-            y : [ <TMPL_VAR NAME="clicks"> ],
-            boxpoints: 'all',
-            jitter: 0.3,
-            pointpos: -1.8,
-            type: 'box',
-            name: '<TMPL_VAR NAME="grade">'
-        },
-        </TMPL_LOOP>
-    ];
+var cy = cytoscape( {
+    container: document.getElementById( 'cy' ),
+        elements: [ 
+              // nodes <TMPL_LOOP NAME="nodes">
+                { data: { id: '<TMPL_VAR NAME="id">' },
+                      classes: '<TMPL_VAR NAME="role">' }, 
+                       </TMPL_LOOP> 
+              // edges <TMPL_LOOP NAME="edges">
+                { data: { id: '<TMPL_VAR NAME="id">',
+                          source: '<TMPL_VAR NAME="source">',
+                          target: '<TMPL_VAR NAME="target">' } }, 
+                       </TMPL_LOOP> // edges
+        ],
+        style: [
+            {
+                selector: '.teacher',
+                style: { shape: 'hexagon',
+                     'background-color': 'red',
+                     label: 'data(id)'
+                }
+            },
+            {
+                selector: '.student',
+                style : {
+                    shape: 'circle',
+                    'background-color': 'blue',
+                    label: 'data(id)'
+                }
+            },
+            {
+                selector: 'edge',
+                style : {
+                    'target-arrow-shape': 'triangle',
+                    'target-arrow-color': '#000',
+                    'curve-style' : 'bezier'
+                }
+            }
+        ],
+        layout: {
+            name: 'cose',
+            directed: true,
+        }
+    });
 
-    var layout = {
-        title : "<TMPL_VAR NAME="ANALYTIC_NAME">",
-        yaxis : { title: "# of total clicks" },
-        xaxis : { title: 'Grade' }
-    };
-
-    Plotly.newPlot('myDiv', data, layout );
 </script>
 
 
@@ -42,14 +78,12 @@
 
   <div style="margin:auto; width:60%">
     <h3>Explanation</h3>
-    <p>The total number of clicks on a course site are divided up into two catego
-ries:</p>
-    <ol>
-       <li> Forum - a click on a discussion forum.
-            <p>Typically the main (but not only) form of human-human interaction.
-</p> </li>
-       <li> Content - a click anywhere else on the course site.</li>
-    </ol>
+      <p>The above network represents which people have replied to each other's forum posts.</p>
+       <p>There are two groups of people:</p>
+        <ol>
+          <li> Teaching staff - represented by red hexagons. </li>
+          <li> Learners - represented by blue circles. </li>
+       </ol> 
   </div>
 
 
