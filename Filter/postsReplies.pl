@@ -34,7 +34,7 @@ my $POSTS_REPLIES_DEFAULTS = {
     FIELDS => "course,year,term,forumid,discussionid," .
               "postid,postAuthorid,postAuthorRole,postTimeCreated," .
               "parentid,parentAuthorid,parentAuthorRole,parentTimeCreated",
-    CONDITIONS => "forumid={forumid}"  #-- for initial deleting of data
+    CONDITIONS => "course={course} and year={year} and term={term}"  #-- for initial deleting of data
 };
 
 my @OFFERINGS = (  qw/ EDC3100_2015_2 EDC3100_2015_1 
@@ -108,13 +108,13 @@ foreach my $offering ( @{$ids->{DATA}} ) {
 
                 if ( $post->{parent} != 0 ) {
                     my $parent = $posts{$post->{parent}};
+#print Dumper( $parent );
 
-                    $newPost->{parentId} = $post->{parent};
+                    $newPost->{parentid} = $post->{parent};
                     $newPost->{parentAuthorid} = $parent->{userid},
                     $newPost->{parentAuthorRole} = $roles->{$parent->{userid}},
                     $newPost->{parentTimeCreated} = $parent->{created};
                 }
-
                 push @posts, $newPost;
             }
         }
@@ -123,8 +123,7 @@ foreach my $offering ( @{$ids->{DATA}} ) {
 #print Dumper( \@posts );
 #die;
     #-- insert the new data into posts_replies
-    insertPosts( \@posts );
-#die;
+    insertPosts( \@posts, $offering->{shortname} );
 }
 
 
@@ -135,16 +134,19 @@ foreach my $offering ( @{$ids->{DATA}} ) {
 
 sub insertPosts( $ ) {
     my $posts = shift;
+    my $shortname = shift;
 
     my $count = @$posts;
     if ( $count == 0 ) {
         return;
     }
 
-    my $forum = $posts->[0]->{forumid};
+    my @offering = split /_/, $shortname;
+
     my $tablePosts = NewModel->new( CONFIG => $CONFIG,
                 DEFAULTS => $POSTS_REPLIES_DEFAULTS,
-                KEYS => { forumid => $forum } );
+                KEYS => { course => $offering[0], year => $offering[1],
+                          term => $offering[2]} );
 
 #print Dumper( $tablePosts->{DATA} );
 #die;
@@ -161,7 +163,6 @@ sub insertPosts( $ ) {
     $tablePosts->{CONDITIONS} = "";
 
     $tablePosts->Insert();
-
     if ( $tablePosts->Errors() ) {
         $tablePosts->DumpErrors();
         die;
