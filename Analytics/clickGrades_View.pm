@@ -118,7 +118,7 @@ sub Display {
 
     #-- set up the nav menus at top of page
     # - entire site structure
-    $self->{TEMPLATE}->param( COURSES => $self->{COURSES} );
+#    $self->{TEMPLATE}->param( COURSES => $self->{COURSES} );
     # - menu for the offering - basically the subsets
     my $subsets = $self->constructSubsetsView();
     $self->{TEMPLATE}->param( SUBSETS => $subsets );
@@ -201,6 +201,8 @@ sub plotly( ) {
 
 sub constructSubsetsView() {
     my $self = shift;
+
+    return [] if ( ! exists $self->{VALUES}->{COURSES} );
 
     my $course = $self->{VALUES}->{COURSE};
     my $offering = $self->{VALUES}->{OFFERING};
