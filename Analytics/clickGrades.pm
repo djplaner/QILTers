@@ -182,27 +182,48 @@ sub setUpRoleData() {
 #---------------------------------------------------------------------------
 # @{$students} = getSubset( $subset )
 # - return a subset of data from this model based on the $subset
-# - all - all students
-# - Online, Springfield, Toowoomba, Fraser Coast - enrolments in extras
-# - staff - all staff
-# 
+#
+# $subset can be a string of equal statments (e.g. mode=Online)
+# - LHS: either mode or plan 
+# - RHS: values found 
+#      EVENTUALLY this could be formula etc
+#
+# OR just "staff" or "all" (all students)
+#
 
 sub getSubset( $ ) {
     my $self = shift;
     my $subset = shift;
 
-    #-- all is just all students
+
+    #-- Handle the simple statments
+    # - all = all students
+    # - staff = all staff
     if ( $subset eq "all" ) {
         return $self->{BY_ROLE}->[0];
     } elsif ( $subset eq "staff" ) {
         return $self->{BY_ROLE}->[1];
-    } elsif ( $subset eq "Online" || $subset eq "Toowoomba" ||
-              $subset eq "Springfield" || $subset eq "Fraser Coast" ) {
-        my @data = grep { $_->{EXTRAS}->{mode} eq $subset }
-                         @{$self->{BY_ROLE}->[0]};
-
-        return \@data;
     }
+
+    #-- handle the operators
+    # - split subset into operations
+
+    my @match = @{$self->{BY_ROLE}->[0]};
+
+    my @operations = split ",", $subset;
+
+    #-- loop through each statement and continually filter based on that
+    foreach my $operation ( @operations ) {
+    
+        my @statement = split '=', $operation;
+
+        @match = grep { $_->{EXTRAS}->{$statement[0]} eq $statement[1] }
+                        @match;
+    }
+
+    my $count = @match;
+    return \@match if ( $count > 0 ) ;
+
     return undef;
 }
 
