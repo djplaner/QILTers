@@ -100,6 +100,7 @@ my @OFFERINGS = ( qw/ EDC3100_2015_1 EDC3100_2015_2 / );
 
 my %CORRECT_VALUES = map { ( $_ => 1 ) } values %PLAN_FILTER;
 
+#print Dumper( \%CORRECT_VALUES );
 foreach my $offering ( @OFFERINGS ) {
     my @offering = split /_/, $offering;
 
@@ -116,15 +117,18 @@ foreach my $offering ( @OFFERINGS ) {
     my @changes;
     #-- loop through and check/change the plan
     foreach my $student ( @{$extras->{DATA}} ) {
-        #-- does the student's plan even exist
-        if ( ! exists $PLAN_FILTER{ $student->{plan} } ) {
+
+#print "plan $student->{plan}\n";
+#print "correct $CORRECT_VALUES{$student->{plan}}\n";
+        #-- is the student's plan a correct value, skip onto next one
+        if ( exists $CORRECT_VALUES{$student->{plan}} ) {
+            next;   
+
+        #-- if it doesn't exist die
+        } elsif ( ! exists $PLAN_FILTER{ $student->{plan} } ) {
             print Dumper( $student );
             print "No filter plan for $student->{plan}\n";
             die;
-
-        #-- is the student's plan a correct value, skip onto next one
-        } elsif ( exists $CORRECT_VALUES{$student->{plan}} ) {
-            next;
 
         #-- is there a mismatch 
         } elsif ( $PLAN_FILTER{$student->{plan}} ne $student->{plan} ) {
@@ -135,7 +139,14 @@ foreach my $offering ( @OFFERINGS ) {
 
     my $change = @changes;
 
+    print "Offering $offering changing $change rows of " . $extras->NumberOfRows() . "\n";
     if ( $change > 0 ) {
-        print Dumper( \@changes );
-    }
+        #-- update the changes
+        #print Dumper( \@changes );
+
+        $extras->{DATA} = \@changes;
+#        $extras->{DEBUG} = 2;
+        $extras->{CONDITIONS} .= " and userid={userid} ";
+        $extras->Update( qw/ plan /);
+    } 
 }
