@@ -59,9 +59,85 @@ sub new {
     $self->{CLICKS_GRADES} = QILTers::Analytics::clickGrades->new(
                                 OFFERING => $args{OFFERING} );
 
+    if ( $self->{CLICKS_GRADES}->Errors() ) {
+        $self->{CLICKS_GRADES}->DumpErrors();
+        die;
+    }
+
+    $self->generateForumHash();
+
+#   -- leave this for later -- this is trying to get the 
+#       subset by mode working, may need to remove it
+#   -- subset by forum might be better approach
+#    $self->addExtras();
+
     #-- generate the network model for all participants
     $self->{NETWORK_ALL} = $self->generateNetworkModel( $self->{DATA} );
     return $self;
+}
+
+#-------------------------------------------------------------
+# generateForumHash
+# - create FORUMS has hash keyed on forumid of all forums
+#   in the course
+# - value will posts in that forum
+
+sub generateForumHash {
+    my $self = shift;
+
+    #-- get array of all forums
+    my %forums = map { ( $_->{forumid} => 1 ) } @{$self->{DATA}};
+
+    foreach my $forum ( keys %forums ) {
+        my @array = grep { $_->{forumid} == $forum } @{$self->{DATA}};
+        $forums{$forum} = \@array;
+    }
+
+    $self->{FORUMS} = \%forums;
+}
+
+#-------------------------------------------------------------
+# addExtras
+# - insert extras for both post author and parent author
+
+sub addExtras {
+    my $self = shift;
+
+    foreach my $post ( @{$self->{DATA}} ) {
+        my $users = $self->{CLICKS_GRADES}->{USERID};
+
+        next if ( ! exists $users->{$post->{postauthorid}} );
+print "*** CURRENT POST\n";
+print Dumper( $post );
+        $post->{EXTRAS} = $users->{ $post->{postauthorid} }->{EXTRAS};
+        $post->{PARENT_EXTRAS} = $users->{ $post->{parentauthorid} }->{EXTRAS};
+print "*** NEW POST\n";
+print Dumper( $post );
+die;
+print "author id is " . $post->{postauthorid} . "\n";
+print "********* user stuff - where is extras\n";
+print Dumper( $users->{ $post->{postauthorid} } );
+print "***\n";
+    }
+}
+
+#-------------------------------------------------------------
+# getSubset( $subset )
+# - return the right generateNetworkModel for the subset
+# --- incomplete
+
+sub getSubset( $ ) {
+    my $self = shift;
+    my $subset = shift;
+
+    #-- if subset == all then return network_all
+    return $self->{DATA} if ( $subset eq "all" );
+
+    if ( exists $self->{FORUMS}->{$subset} ) {
+        return $self->{FORUMS}->{$subset};
+    }
+
+    return undef;
 }
 
 #-------------------------------------------------------------
@@ -80,7 +156,7 @@ sub new {
 
 sub generateNetworkModel($) {
     my $self = shift;
-    my $posts = shift;
+    my $subset = shift;
 
     my @role = ( qw/ student teacher / );
     my %array; my @nodes;  my @edges;
@@ -109,7 +185,8 @@ sub generateNetworkModel($) {
     # - source is current post, target is parent
 #print Dumper( $self->{DATA} );
 #die;
-    foreach my $post ( @{$self->{DATA}} ) {
+    #foreach my $post ( @{$self->{DATA}} ) {
+    foreach my $post ( @{$subset} ) {
         if ( $post->{parentid} ne "" ) {
             #-- increase the weight of edge between user and parent
             $userNodeHash{$post->{postauthorid}}->{REPLIES}->{$post->{parentauthorid}}->{WEIGHT}++;

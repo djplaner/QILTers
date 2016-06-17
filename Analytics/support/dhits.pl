@@ -16,8 +16,8 @@ use webfuse::lib::QILTers::Analytics::dhits_View;
 
 
 my $model = QILTers::Analytics::dhits->new( OFFERING => "EDP4130_2015_1" );
-print Dumper( $model );
-foreach my $set ( qw/ all / ) {
+#print Dumper( $model );
+foreach my $set ( qw/ all Toowoomba / ) {
 
     my $subset = $model->getSubset( $set );
     my $all = $model->getSubsetQuantStats( $subset );

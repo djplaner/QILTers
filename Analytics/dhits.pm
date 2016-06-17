@@ -71,6 +71,9 @@ sub new {
 
     $self = $self->SUPER::new( %args );
 
+    $self->addUserExtras();
+    $self->setUpRoleData();
+
     $self->createTotalDhits();
 
     return $self;

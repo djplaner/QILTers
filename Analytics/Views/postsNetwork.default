@@ -9,7 +9,7 @@
         margin: auto;
         border: 1px solid #ddd;
                     height: 680px;
-                    width: 1000px;
+                    width: 680px;
                     overflow: auto !important;
        border-radius: 0.25em;
     }
@@ -60,6 +60,11 @@ var cy = cytoscape( {
         layout: {
             name: 'cose',
             directed: true,
+            animate: 'during',
+            edgeElasticity: 20,
+            'fit': true,
+            tilingPaddingVertical: 5,
+            tilingPaddingHorizontal: 5
         }
     });
 

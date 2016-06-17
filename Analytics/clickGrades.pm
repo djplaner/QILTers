@@ -70,11 +70,13 @@ sub new {
     # - teaching staff may not have anything in mdl_user_extras
     return $self if ( ! $self->HandleParams( %args ) );
 
-    #-- get the mdl_user_extras ******
-    $self->addUserExtras();
+    if ( $self->{OFFERING}->{q_type} eq "TOTAL CLICKS" ) {
+        #-- get the mdl_user_extras ******
+        $self->addUserExtras();
  
-    #-- set up different sub-arrays based on roleid
-    $self->setUpRoleData();
+        #-- set up different sub-arrays based on roleid
+        $self->setUpRoleData();
+    }
 
     return $self;
 }
@@ -87,8 +89,6 @@ sub HandleParams {
     my $self = shift;
     my %args = @_;
 
-#print Dumper( \%args );
-#die;
     #-- setup the defaults
     if ( exists $args{DEFAULTS} ) {
         %{$self->{DEFAULTS}} = %{$args{DEFAULTS}};
@@ -117,6 +117,7 @@ sub HandleParams {
         $self->{OFFERING}->{course} = $offerings[0];
         $self->{OFFERING}->{year} = $offerings[1];
         $self->{OFFERING}->{term} = $offerings[2];
+        $self->{OFFERING}->{q_type} = $args{q_type};
     }
  
     return $self->SUPER::HandleParams( %args );
@@ -150,11 +151,14 @@ sub addUserExtras() {
     #-- create a hash into $q->{DATA} based on userid
     my %userId = map { ( $_->{userid} => $_ ) } @{$q->{DATA}};
 
+
     #-- merge qilt data into $self->{DATA}
     foreach my $row ( @{$self->{DATA}} ) {
         $row->{EXTRAS} = $userId{ $row->{userid} };
 #        $row->{roleid} = $userId{ $row->{userid} }->{roleid};
     }
+    %userId = map { ( $_->{userid} => $_ ) } @{$self->{DATA}};
+    $self->{USERID} = \%userId;
 }
 
 #---------------------------------------------------------------------------

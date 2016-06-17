@@ -1,4 +1,4 @@
-#
+
 # FILE:		postsNetwork_View.pm
 # PURPOSE:	View class for QILTers::Analytics::dhits
 #                               
@@ -96,8 +96,16 @@ sub Display {
     }
 
     #-- point to the right subset of data
-    #   - for both dhits and clicks
 print "Getting $self->{VALUES}->{SUBSET}\n";
+    #-- default do all
+#    $self->{SUBSET} = $self->{MODEL}->{NETWORK_ALL};
+
+    $self->{SUBSET} = $self->{MODEL}->getSubset( $self->{VALUES}->{SUBSET} );
+
+    if ( ! defined $self->{SUBSET} ) {
+        die "Couldn't get SUBSET in postsNetwork\n";
+    }
+    $self->{NETWORK} = $self->{MODEL}->generateNetworkModel( $self->{SUBSET} );
 
     my $count = 1; #**** will need to be changed
     if ( $count != 0 ) {
@@ -153,10 +161,8 @@ print "Getting $self->{VALUES}->{SUBSET}\n";
 sub plotly( ) {
     my $self = shift;
 
-    my $subset = $self->{MODEL}->{NETWORK_ALL};
-
-    $self->{TEMPLATE}->param( nodes => $subset->{NODES},
-                        edges => $subset->{EDGES} );
+    $self->{TEMPLATE}->param( nodes => $self->{NETWORK}->{NODES},
+                        edges => $self->{NETWORK}->{EDGES} );
 }
 
 #-----------------------------------------------------------------

@@ -24,7 +24,9 @@ my %COURSES = (
         "2015_1" => {
             clickGrades => [ qw/ all Online Springfield Toowoomba Fraser_Coast / ],
             dhits => [ qw/ all Online Springfield Toowoomba Fraser_Coast staff / ],
-            dhitsGrades => [ qw/ all Online Springfield Toowoomba Fraser_Coast staff / ]
+            dhitsGrades => [ qw/ all Online Springfield Toowoomba Fraser_Coast staff / ],
+            postsNetwork => [ qw/ all 49765 49752/ ]
+        
         },
         "2015_2" => {
             clickGrades => [ qw/ all  / ],
@@ -37,11 +39,13 @@ my %COURSES = (
         "2015_1" => {
             clickGrades => [ qw/ all / ],
             dhits => [ qw/ all staff / ],
-            dhitsGrades => [ qw/ all staff  / ]
+            dhitsGrades => [ qw/ all staff  / ],
+            postsNetwork => [ qw/ all / ]
         },
         "2015_2" => {
             clickGrades => [ qw/ all Online Toowoomba/ ],
             dhits => [ qw/ all staff Online Toowoomba/ ],
+            postsNetwork => [ qw/ all / ],
             dhitsGrades => [ qw/ all staff Online Toowoomba/ ]
         },
     },
@@ -50,11 +54,13 @@ my %COURSES = (
         "2015_1" => {
             clickGrades => [ qw/ all Fraser_Coast Online Springfield Toowoomba / ],
             dhits => [ qw/ all staff Fraser_Coast Online Springfield Toowoomba / ],
+            postsNetwork => [ qw/ all / ],
             dhitsGrades => [ qw/ all staff Fraser_Coast Online Springfield Toowoomba / ]
         },
         "2015_2" => {
             clickGrades => [ qw/ all / ],
             dhits => [ qw/ all staff / ],
+            postsNetwork => [ qw/ all / ],
             dhitsGrades => [ qw/ all staff / ]
         },
     },    
@@ -62,17 +68,20 @@ my %COURSES = (
         "2015_1" => {
             clickGrades => [ qw/ all Fraser_Coast ONline Springfield Toowoomba / ],
             dhits => [ qw/ all staff Fraser_Coast ONline Springfield Toowoomba/ ],
+            postsNetwork => [ qw/ all / ],
             dhitsGrades => [ qw/ all staff Fraser_Coast ONline Springfield Toowoomba/ ],
         },
         "2015_2" => {
             clickGrades => [ qw/ all / ],
             dhits => [ qw/ all staff / ],
+            postsNetwork => [ qw/ all / ],
             dhitsGrades => [ qw/ all staff / ],
         },
     },
     EDX3160 => {
         "2015_2" => {
             clickGrades => [ qw/ all Fraser_Coast Online Springfield Toowoomba / ],
+            postsNetwork => [ qw/ all / ],
             dhits => [ qw/ all staff Fraser_Coast Online Springfield Toowoomba / ],
             dhitsGrades => [ qw/ all staff Fraser_Coast Online Springfield Toowoomba / ],
         },
@@ -81,29 +90,34 @@ my %COURSES = (
         "2015_1" => {
             clickGrades => [ qw/ all Online Springfield Toowoomba / ],
             dhits => [ qw/ all staff Online Springfield Toowoomba / ],
+            postsNetwork => [ qw/ all / ],
             dhitsGrades => [ qw/ all staff Online Springfield Toowoomba / ],
         },
         "2015_2" => {
             clickGrades => [ qw/ all Online Springfield Toowoomba / ],
             dhits => [ qw/ all staff Online Springfield Toowoomba / ],
+            postsNetwork => [ qw/ all / ],
             dhitsGrades => [ qw/ all staff Online Springfield Toowoomba / ],
         },
     },
     EDC1400 => {
         "2015_1" => {
             clickGrades => [ qw/ all Fraser_Coast Online Springfield Toowoomba / ],
+            postsNetwork => [ qw/ all / ],
             dhits => [ qw/ all staff  Online Springfield Toowoomba / ],
             dhitsGrades => [ qw/ all staff  Online Springfield Toowoomba / ],
         },
         "2015_2" => {
             clickGrades => [ qw/ all  Online Springfield Toowoomba / ],
             dhits => [ qw/ all staff  Online Springfield Toowoomba / ],
+            postsNetwork => [ qw/ all / ],
             dhitsGrades => [ qw/ all staff  Online Springfield Toowoomba / ],
         },
     },
     EDP4130 => {
         "2015_1" => {
             dhits => [ qw/ all staff Fraser_Coast Online Springfield Toowoomba/ ] ,
+            postsNetwork => [ qw/ all / ],
             dhitsGrades => [ qw/ all staff Fraser_Coast Online Springfield Toowoomba/ ] ,
             clickGrades => [ qw/ all Fraser_Coast Online Springfield Toowoomba/ ] 
         }
