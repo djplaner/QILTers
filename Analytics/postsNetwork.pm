@@ -58,7 +58,8 @@ sub new {
 
     $self->{CLICKS_GRADES} = QILTers::Analytics::clickGrades->new(
                                 OFFERING => $args{OFFERING} );
-
+#print Dumper( $self->{CLICKS_GRADES} );
+#die;
     if ( $self->{CLICKS_GRADES}->Errors() ) {
         $self->{CLICKS_GRADES}->DumpErrors();
         die;
@@ -69,6 +70,7 @@ sub new {
 #   -- leave this for later -- this is trying to get the 
 #       subset by mode working, may need to remove it
 #   -- subset by forum might be better approach
+#   -- actually need it, combining forum selection and user selection
 #    $self->addExtras();
 
     #-- generate the network model for all participants
@@ -103,7 +105,11 @@ sub generateForumHash {
 sub addExtras {
     my $self = shift;
 
+print "In add extras\n";
+
+    #-- for each post in the forums for this offering
     foreach my $post ( @{$self->{DATA}} ) {
+        #-- get the user
         my $users = $self->{CLICKS_GRADES}->{USERID};
 
         next if ( ! exists $users->{$post->{postauthorid}} );
@@ -128,14 +134,42 @@ print "***\n";
 
 sub getSubset( $ ) {
     my $self = shift;
-    my $subset = shift;
+    my $subset = shift || "all";
 
+    #-- the subset of posts to return
+    my $posts;
+
+    #-- need to extract out any FORUMs= stuff
+    #   allow multiple???
     #-- if subset == all then return network_all
-    return $self->{DATA} if ( $subset eq "all" );
+    if ( $subset eq "all" ) {
+        $posts = $self->{DATA};
+    } 
 
-    if ( exists $self->{FORUMS}->{$subset} ) {
-        return $self->{FORUMS}->{$subset};
+    if ( $subset =~ /forum=([^,]*)/ ) {
+        my $forum = $1;
+        $subset =~ s/forum=[^,]*//;
+        print "looking for $forum\n";
+        if ( exists $self->{FORUMS}->{$forum} ) {
+            $posts = $self->{FORUMS}->{$forum};
+        }
     }
+
+    #-- tidy up the subset query
+    $subset =~ s/^,//;
+    $subset =~ s/,$//;
+
+    #-- limit by student extras details
+    my $students = $self->{CLICKS_GRADES}->getSubset( $subset );
+    my %students = map { ( $_->{userid} => $_ ) } @$students;
+
+    #-- only return the posts for students
+    my $all_count = @$posts;
+    my @subset_posts = grep { exists $students{$_->{postauthorid}} } @$posts;
+
+    my $count = @subset_posts;
+
+    return \@subset_posts if ( $count > 0 );
 
     return undef;
 }

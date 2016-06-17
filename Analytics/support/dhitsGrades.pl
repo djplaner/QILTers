@@ -35,6 +35,6 @@ print Dumper( $model );
 my $view  = QILTers::Analytics::dhitsGrades_View->new( MODEL => $model );
 my $string = $view->Display( 
                 COURSE => "EDP4130", OFFERING => "2015_1",
-                            SUBSET => "all" );
+                            SUBSET => "mode=Toowoomba,grade=F" );
 
 print $string;
